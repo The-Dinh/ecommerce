@@ -1,0 +1,10 @@
+{
+  "version": 1,
+  "skills": {
+    "spring-boot-full-stack": {
+      "source": "mduongvandinh/skills-java-spring",
+      "sourceType": "github",
+      "computedHash": "e27c3d198b9296b26659a833b0bdbd7dd16a4cbc6ecd04a0e76ef45ba36bf0f0"
+    }
+  }
+}
