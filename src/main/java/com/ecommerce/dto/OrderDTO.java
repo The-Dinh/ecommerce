@@ -11,6 +11,7 @@ import lombok.Setter;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Getter
 @Setter
@@ -31,4 +32,6 @@ public class OrderDTO {
     private PaymentStatus paymentStatus;
 
     private OrderStatus orderStatus;
+
+    private List<OrderItemDTO> orderItems;
 }

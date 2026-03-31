@@ -35,8 +35,7 @@ public class CartController {
             @PathVariable Long userId,
             @PathVariable Long cartItemId,
             @RequestBody CartItemDTO cartItemDTO) {
-        // TODO: Call service
-        CartDTO cart = new CartDTO();
+        CartDTO cart = cartService.updateCartItem(userId, cartItemId, cartItemDTO);
         return ResponseEntity.ok(ApiResponse.success(cart));
     }
 
@@ -45,13 +44,13 @@ public class CartController {
             @PathVariable Long userId,
             @PathVariable Long cartItemId) {
         // TODO: Call service
-        CartDTO cart = new CartDTO();
+        CartDTO cart = cartService.removeCartItem(userId, cartItemId);
         return ResponseEntity.ok(ApiResponse.success("Item removed from cart", cart));
     }
 
     @DeleteMapping("/{userId}/clear")
     public ResponseEntity<ApiResponse<Void>> clearCart(@PathVariable Long userId) {
-        // TODO: Call service
+        cartService.clearCart(userId);
         return ResponseEntity.ok(ApiResponse.success("Cart cleared successfully", null));
     }
 }
