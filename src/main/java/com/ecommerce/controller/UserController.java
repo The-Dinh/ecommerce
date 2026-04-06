@@ -1,15 +1,17 @@
 package com.ecommerce.controller;
 
+import com.ecommerce.dto.AdminUpdateUserRequest;
+import com.ecommerce.dto.UpdateProfileRequest;
+import com.ecommerce.dto.UpdateUserRoleRequest;
 import com.ecommerce.dto.UserDTO;
 import com.ecommerce.exception.ApiResponse;
 import com.ecommerce.service.UserService;
-
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.Collections;
 import java.util.List;
 
 @RestController
@@ -19,32 +21,46 @@ public class UserController {
 
     private final UserService userService;
 
+    @GetMapping("/me")
+    public ResponseEntity<ApiResponse<UserDTO>> getMyProfile(Authentication authentication) {
+        UserDTO user = userService.getMyProfile(authentication.getName());
+        return ResponseEntity.ok(ApiResponse.success(user));
+    }
+
+    @PutMapping("/me")
+    public ResponseEntity<ApiResponse<UserDTO>> updateMyProfile(
+            Authentication authentication,
+            @Valid @RequestBody UpdateProfileRequest request) {
+        UserDTO updatedUser = userService.updateMyProfile(authentication.getName(), request);
+        return ResponseEntity.ok(ApiResponse.success("Profile updated successfully", updatedUser));
+    }
+
     @GetMapping
     public ResponseEntity<ApiResponse<List<UserDTO>>> getAllUsers() {
-        // TODO: Call service
         List<UserDTO> users = userService.getAllUsers();
         return ResponseEntity.ok(ApiResponse.success(users));
     }
 
     @GetMapping("/{id}")
     public ResponseEntity<ApiResponse<UserDTO>> getUserById(@PathVariable Long id) {
-        // TODO: Call service
         UserDTO user = userService.getUserById(id);
         return ResponseEntity.ok(ApiResponse.success(user));
     }
 
-    @PostMapping
-    public ResponseEntity<ApiResponse<UserDTO>> createUser(@RequestBody UserDTO userDTO) {
-        // TODO: Call service
-        UserDTO createdUser = userService.createUser(userDTO);
-        return ResponseEntity.status(201).body(ApiResponse.created(createdUser));
+    @PutMapping("/{id}")
+    public ResponseEntity<ApiResponse<UserDTO>> updateUser(
+            @PathVariable Long id,
+            @Valid @RequestBody AdminUpdateUserRequest request) {
+        UserDTO updatedUser = userService.updateUser(id, request);
+        return ResponseEntity.ok(ApiResponse.success("User updated successfully", updatedUser));
     }
 
-    @PutMapping("/{id}")
-    public ResponseEntity<ApiResponse<UserDTO>> updateUser(@PathVariable Long id, @RequestBody UserDTO userDTO) {
-        // TODO: Call service
-        UserDTO updatedUser = userService.updateUser(id, userDTO);
-        return ResponseEntity.ok(ApiResponse.success(updatedUser));
+    @PatchMapping("/{id}/role")
+    public ResponseEntity<ApiResponse<UserDTO>> updateUserRole(
+            @PathVariable Long id,
+            @Valid @RequestBody UpdateUserRoleRequest request) {
+        UserDTO updatedUser = userService.updateUserRole(id, request);
+        return ResponseEntity.ok(ApiResponse.success("User role updated successfully", updatedUser));
     }
 
     @DeleteMapping("/{id}")

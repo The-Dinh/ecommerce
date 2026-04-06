@@ -29,6 +29,8 @@ public class OrderDTO {
 
     private String shippingAddress;
 
+    private String paymentMethod;
+
     private PaymentStatus paymentStatus;
 
     private OrderStatus orderStatus;

@@ -4,13 +4,11 @@ import com.ecommerce.dto.OrderDTO;
 import com.ecommerce.enumtype.OrderStatus;
 import com.ecommerce.exception.ApiResponse;
 import com.ecommerce.service.OrderService;
-
 import lombok.RequiredArgsConstructor;
-
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.Collections;
 import java.util.List;
 
 @RestController
@@ -18,33 +16,48 @@ import java.util.List;
 @RequiredArgsConstructor
 public class OrderController {
 
-    // TODO: Inject OrderService
     private final OrderService orderService;
 
-    @PostMapping("/user/{userId}")
-    public ResponseEntity<ApiResponse<OrderDTO>> createOrder(@PathVariable Long userId,
+    @PostMapping("/me")
+    public ResponseEntity<ApiResponse<OrderDTO>> createMyOrder(
+            Authentication authentication,
             @RequestBody OrderDTO orderDTO) {
-        // TODO: Call service
-        OrderDTO createdOrder = orderService.createOrder(userId, orderDTO);
+        OrderDTO createdOrder = orderService.createMyOrder(authentication.getName(), orderDTO);
         return ResponseEntity.status(201).body(ApiResponse.created(createdOrder));
     }
 
-    @GetMapping("/{orderId}")
-    public ResponseEntity<ApiResponse<OrderDTO>> getOrderById(@PathVariable Long orderId) {
-        OrderDTO order = orderService.getOrderById(orderId);
+    @GetMapping("/me")
+    public ResponseEntity<ApiResponse<List<OrderDTO>>> getMyOrders(Authentication authentication) {
+        List<OrderDTO> orders = orderService.getMyOrders(authentication.getName());
+        return ResponseEntity.ok(ApiResponse.success(orders));
+    }
+
+    @GetMapping("/me/{orderId}")
+    public ResponseEntity<ApiResponse<OrderDTO>> getMyOrderById(
+            Authentication authentication,
+            @PathVariable Long orderId) {
+        OrderDTO order = orderService.getMyOrderById(authentication.getName(), orderId);
         return ResponseEntity.ok(ApiResponse.success(order));
     }
 
-    @GetMapping("/user/{userId}")
-    public ResponseEntity<ApiResponse<List<OrderDTO>>> getOrdersByUserId(@PathVariable Long userId) {
-        List<OrderDTO> orders = orderService.getOrdersByUserId(userId);
-        return ResponseEntity.ok(ApiResponse.success(orders));
+    @PatchMapping("/me/{orderId}/cancel")
+    public ResponseEntity<ApiResponse<OrderDTO>> cancelMyOrder(
+            Authentication authentication,
+            @PathVariable Long orderId) {
+        OrderDTO cancelledOrder = orderService.cancelMyOrder(authentication.getName(), orderId);
+        return ResponseEntity.ok(ApiResponse.success("Order cancelled successfully", cancelledOrder));
     }
 
     @GetMapping
     public ResponseEntity<ApiResponse<List<OrderDTO>>> getAllOrders() {
         List<OrderDTO> orders = orderService.getAllOrders();
         return ResponseEntity.ok(ApiResponse.success(orders));
+    }
+
+    @GetMapping("/{orderId}")
+    public ResponseEntity<ApiResponse<OrderDTO>> getOrderById(@PathVariable Long orderId) {
+        OrderDTO order = orderService.getOrderById(orderId);
+        return ResponseEntity.ok(ApiResponse.success(order));
     }
 
     @PutMapping("/{orderId}/status")

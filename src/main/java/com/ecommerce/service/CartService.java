@@ -5,13 +5,13 @@ import com.ecommerce.dto.CartItemDTO;
 
 public interface CartService {
 
-    CartDTO getCartByUserId(Long userId);
+    CartDTO getMyCart(String email);
 
-    CartDTO addItemToCart(Long userId, CartItemDTO cartItemDTO);
+    CartDTO addItemToMyCart(String email, CartItemDTO cartItemDTO);
 
-    CartDTO updateCartItem(Long userId, Long cartItemId, CartItemDTO cartItemDTO);
+    CartDTO updateMyCartItem(String email, Long cartItemId, CartItemDTO cartItemDTO);
 
-    CartDTO removeCartItem(Long userId, Long cartItemId);
+    CartDTO removeMyCartItem(String email, Long cartItemId);
 
-    void clearCart(Long userId);
+    void clearMyCart(String email);
 }

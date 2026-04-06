@@ -20,7 +20,6 @@ public class CategoryServiceImpl implements CategoryService {
         Category category = Category.builder()
                 .name(categoryDTO.getName())
                 .description(categoryDTO.getDescription())
-                .description(categoryDTO.getDescription())
                 .createdAt(categoryDTO.getCreatedAt())
                 .build();
         Category saveCategory = categoryRepository.save(category);
@@ -35,7 +34,7 @@ public class CategoryServiceImpl implements CategoryService {
         existedCategory.setDescription(categoryDTO.getDescription());
         existedCategory.setCreatedAt(categoryDTO.getCreatedAt());
         Category updateCategory = categoryRepository.save(existedCategory);
-        return mapToDTO(existedCategory);
+        return mapToDTO(updateCategory);
     }
 
     @Override

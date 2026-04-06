@@ -1,6 +1,7 @@
 package com.ecommerce.dto;
 
 import com.ecommerce.enumtype.Role;
+import com.fasterxml.jackson.annotation.JsonProperty;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;

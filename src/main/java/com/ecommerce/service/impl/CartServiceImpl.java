@@ -5,40 +5,38 @@ import com.ecommerce.dto.CartItemDTO;
 import com.ecommerce.entity.Cart;
 import com.ecommerce.entity.CartItem;
 import com.ecommerce.entity.Product;
+import com.ecommerce.entity.User;
+import com.ecommerce.exception.ResourceNotFoundException;
 import com.ecommerce.repository.CartItemRepository;
 import com.ecommerce.repository.CartRepository;
 import com.ecommerce.repository.ProductRepository;
+import com.ecommerce.repository.UserRepository;
 import com.ecommerce.service.CartService;
-
 import lombok.RequiredArgsConstructor;
-
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 @Service
 @RequiredArgsConstructor
 public class CartServiceImpl implements CartService {
-    // TODO: Inject CartRepository, CartItemRepository, ProductRepository
     private final CartRepository cartRepository;
     private final CartItemRepository cartItemRepository;
     private final ProductRepository productRepository;
+    private final UserRepository userRepository;
 
     @Override
-    public CartDTO getCartByUserId(Long userId) {
-        Cart cart = cartRepository.findByUserId(userId)
-                .orElseThrow(() -> new RuntimeException("Cart not found with userId: " + userId));
+    public CartDTO getMyCart(String email) {
+        Cart cart = getCartByEmail(email);
         return mapToDTO(cart);
     }
 
     @Override
-    public CartDTO addItemToCart(Long userId, CartItemDTO cartItemDTO) {
-
+    public CartDTO addItemToMyCart(String email, CartItemDTO cartItemDTO) {
         if (cartItemDTO.getQuantity() == null || cartItemDTO.getQuantity() <= 0) {
             throw new RuntimeException("Quantity must be greater than 0");
         }
 
-        Cart cart = cartRepository.findByUserId(userId)
-                .orElseThrow(() -> new RuntimeException("Cart not found with userId: " + userId));
+        Cart cart = getCartByEmail(email);
 
         Product product = productRepository.findById(cartItemDTO.getProductId())
                 .orElseThrow(() -> new RuntimeException("Product not found with id: " + cartItemDTO.getProductId()));
@@ -63,62 +61,63 @@ public class CartServiceImpl implements CartService {
             cartItemRepository.save(newCartItem);
         }
 
-        Cart updatedCart = cartRepository.findByUserId(userId)
-                .orElseThrow(() -> new RuntimeException("Cart not found with userId: " + userId));
-
+        Cart updatedCart = getCartByEmail(email);
         return mapToDTO(updatedCart);
     }
 
     @Override
-    public CartDTO updateCartItem(Long userId, Long cartItemId, CartItemDTO cartItemDTO) {
-        if(cartItemDTO.getQuantity() == null || cartItemDTO.getQuantity() <= 0) {
+    public CartDTO updateMyCartItem(String email, Long cartItemId, CartItemDTO cartItemDTO) {
+        if (cartItemDTO.getQuantity() == null || cartItemDTO.getQuantity() <= 0) {
             throw new RuntimeException("Quantity must be greater than 0");
         }
 
-        Cart cart = cartRepository.findByUserId(userId)
-                .orElseThrow(() -> new RuntimeException("Cart not found with userId: " + userId));
-        
+        Cart cart = getCartByEmail(email);
+
         CartItem cartItem = cartItemRepository.findById(cartItemId)
-                .orElseThrow(() -> new RuntimeException("CartItem not found with userId: " + userId));
-        
-        if(!cartItem.getCart().getId().equals(cart.getId())) {
+                .orElseThrow(() -> new RuntimeException("CartItem not found with id: " + cartItemId));
+
+        if (!cartItem.getCart().getId().equals(cart.getId())) {
             throw new RuntimeException("CartItem does not belong to this user's cart");
         }
 
         cartItem.setQuantity(cartItemDTO.getQuantity());
-
         cartItemRepository.save(cartItem);
 
-        Cart updatedCart = cartRepository.findByUserId(userId)
-                .orElseThrow(() -> new RuntimeException("Cart not found with userId: " + userId));
-        return mapToDTO(updatedCart); 
+        Cart updatedCart = getCartByEmail(email);
+        return mapToDTO(updatedCart);
     }
 
     @Override
-    public CartDTO removeCartItem(Long userId, Long cartItemId) {
-        Cart cart = cartRepository.findByUserId(userId)
-                .orElseThrow(() -> new RuntimeException("Cart not found with userId: " + userId));
+    public CartDTO removeMyCartItem(String email, Long cartItemId) {
+        Cart cart = getCartByEmail(email);
+
         CartItem cartItem = cartItemRepository.findById(cartItemId)
-                .orElseThrow(() -> new RuntimeException("CartItem not found with userId: " + userId));
-        if(!cartItem.getCart().getId().equals(cart.getId())) {
+                .orElseThrow(() -> new RuntimeException("CartItem not found with id: " + cartItemId));
+
+        if (!cartItem.getCart().getId().equals(cart.getId())) {
             throw new RuntimeException("CartItem does not belong to this user's cart");
         }
 
         cartItemRepository.delete(cartItem);
-        
-        Cart updateCart = cartRepository.findByUserId(userId)
-                .orElseThrow(() -> new RuntimeException("Cart not found with userId: " + userId));
-        return mapToDTO(updateCart);
+
+        Cart updatedCart = getCartByEmail(email);
+        return mapToDTO(updatedCart);
     }
 
     @Override
-    // lỗi giữa chừng rollback
     @Transactional
-    public void clearCart(Long userId) {
-        Cart cart = cartRepository.findByUserId(userId)
-                .orElseThrow(() -> new RuntimeException("Cart not found with userId: " + userId));
+    public void clearMyCart(String email) {
+        Cart cart = getCartByEmail(email);
         cartItemRepository.deleteByCartId(cart.getId());
         cart.getCartItems().clear();
+    }
+
+    private Cart getCartByEmail(String email) {
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found with email: " + email));
+
+        return cartRepository.findByUserId(user.getId())
+                .orElseThrow(() -> new ResourceNotFoundException("Cart not found for user email: " + email));
     }
 
     private CartItemDTO mapToCartItemDTO(CartItem cartItem) {
