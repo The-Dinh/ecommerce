@@ -1,6 +1,6 @@
 package com.ecommerce.controller;
 
-import com.ecommerce.dto.CategoryDTO;
+import com.ecommerce.dto.product.CategoryDTO;
 import com.ecommerce.exception.ApiResponse;
 import com.ecommerce.service.CategoryService;
 
@@ -49,3 +49,4 @@ public class CategoryController {
         return ResponseEntity.ok(ApiResponse.success("Category deleted successfully", null));
     }
 }
+

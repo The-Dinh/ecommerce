@@ -1,8 +1,8 @@
 package com.ecommerce.service.impl;
 
-import com.ecommerce.dto.AuthResponse;
-import com.ecommerce.dto.LoginRequest;
-import com.ecommerce.dto.RegisterRequest;
+import com.ecommerce.dto.auth.AuthResponse;
+import com.ecommerce.dto.auth.LoginRequest;
+import com.ecommerce.dto.auth.RegisterRequest;
 import com.ecommerce.entity.Cart;
 import com.ecommerce.entity.User;
 import com.ecommerce.enumtype.Role;
@@ -93,3 +93,4 @@ public class AuthServiceImpl implements AuthService {
         cartRepository.save(cart);
     }
 }
+

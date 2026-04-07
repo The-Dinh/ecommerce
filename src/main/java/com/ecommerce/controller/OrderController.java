@@ -1,9 +1,11 @@
 package com.ecommerce.controller;
 
-import com.ecommerce.dto.OrderDTO;
+import com.ecommerce.dto.order.CheckoutRequest;
+import com.ecommerce.dto.order.OrderDTO;
 import com.ecommerce.enumtype.OrderStatus;
 import com.ecommerce.exception.ApiResponse;
 import com.ecommerce.service.OrderService;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
@@ -21,8 +23,8 @@ public class OrderController {
     @PostMapping("/me")
     public ResponseEntity<ApiResponse<OrderDTO>> createMyOrder(
             Authentication authentication,
-            @RequestBody OrderDTO orderDTO) {
-        OrderDTO createdOrder = orderService.createMyOrder(authentication.getName(), orderDTO);
+            @Valid @RequestBody CheckoutRequest request) {
+        OrderDTO createdOrder = orderService.createMyOrder(authentication.getName(), request);
         return ResponseEntity.status(201).body(ApiResponse.created(createdOrder));
     }
 
@@ -68,3 +70,4 @@ public class OrderController {
         return ResponseEntity.ok(ApiResponse.success("Order status updated", updatedOrder));
     }
 }
+

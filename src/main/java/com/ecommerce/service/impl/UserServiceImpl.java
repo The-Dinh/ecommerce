@@ -1,9 +1,9 @@
 package com.ecommerce.service.impl;
 
-import com.ecommerce.dto.AdminUpdateUserRequest;
-import com.ecommerce.dto.UpdateProfileRequest;
-import com.ecommerce.dto.UpdateUserRoleRequest;
-import com.ecommerce.dto.UserDTO;
+import com.ecommerce.dto.user.AdminUpdateUserRequest;
+import com.ecommerce.dto.user.UpdateProfileRequest;
+import com.ecommerce.dto.user.UpdateUserRoleRequest;
+import com.ecommerce.dto.user.UserDTO;
 import com.ecommerce.entity.User;
 import com.ecommerce.exception.BadRequestException;
 import com.ecommerce.exception.ResourceNotFoundException;
@@ -102,3 +102,4 @@ public class UserServiceImpl implements UserService {
                 .build();
     }
 }
+

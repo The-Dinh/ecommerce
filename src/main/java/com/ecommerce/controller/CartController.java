@@ -1,7 +1,7 @@
 package com.ecommerce.controller;
 
-import com.ecommerce.dto.CartDTO;
-import com.ecommerce.dto.CartItemDTO;
+import com.ecommerce.dto.cart.CartDTO;
+import com.ecommerce.dto.cart.CartItemDTO;
 import com.ecommerce.exception.ApiResponse;
 import com.ecommerce.service.CartService;
 import lombok.RequiredArgsConstructor;
@@ -53,3 +53,4 @@ public class CartController {
         return ResponseEntity.ok(ApiResponse.success("Cart cleared successfully", null));
     }
 }
+

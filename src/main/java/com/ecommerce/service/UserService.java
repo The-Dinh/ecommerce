@@ -1,9 +1,9 @@
 package com.ecommerce.service;
 
-import com.ecommerce.dto.AdminUpdateUserRequest;
-import com.ecommerce.dto.UpdateProfileRequest;
-import com.ecommerce.dto.UpdateUserRoleRequest;
-import com.ecommerce.dto.UserDTO;
+import com.ecommerce.dto.user.AdminUpdateUserRequest;
+import com.ecommerce.dto.user.UpdateProfileRequest;
+import com.ecommerce.dto.user.UpdateUserRoleRequest;
+import com.ecommerce.dto.user.UserDTO;
 import java.util.List;
 
 public interface UserService {
@@ -22,3 +22,4 @@ public interface UserService {
 
     void deleteUser(Long id);
 }
+

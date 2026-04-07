@@ -1,6 +1,6 @@
 package com.ecommerce.service.impl;
 
-import com.ecommerce.dto.ProductDTO;
+import com.ecommerce.dto.product.ProductDTO;
 import com.ecommerce.entity.Category;
 import com.ecommerce.entity.Product;
 import com.ecommerce.repository.CategoryRepository;
@@ -101,3 +101,4 @@ public class ProductServiceImpl implements ProductService {
                 .build();
     }
 }
+

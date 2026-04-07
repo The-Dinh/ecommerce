@@ -12,3 +12,4 @@ public interface OrderItemRepository extends JpaRepository<OrderItem, Long> {
     // TODO: Add custom queries (e.g., findByOrderId)
     List<OrderItem> findByOrderId(Long OrderId);
 }
+

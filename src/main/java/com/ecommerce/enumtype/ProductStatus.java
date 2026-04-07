@@ -5,3 +5,4 @@ public enum ProductStatus {
     INACTIVE,
     OUT_OF_STOCK
 }
+

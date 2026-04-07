@@ -1,12 +1,13 @@
 package com.ecommerce.service;
 
-import com.ecommerce.dto.OrderDTO;
+import com.ecommerce.dto.order.CheckoutRequest;
+import com.ecommerce.dto.order.OrderDTO;
 import com.ecommerce.enumtype.OrderStatus;
 import java.util.List;
 
 public interface OrderService {
 
-    OrderDTO createMyOrder(String email, OrderDTO orderDTO);
+    OrderDTO createMyOrder(String email, CheckoutRequest request);
 
     List<OrderDTO> getMyOrders(String email);
 
@@ -20,3 +21,4 @@ public interface OrderService {
 
     OrderDTO updateOrderStatus(Long orderId, OrderStatus status);
 }
+

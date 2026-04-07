@@ -29,3 +29,4 @@ public class RestAuthenticationEntryPoint implements AuthenticationEntryPoint {
                 ApiResponse.error(HttpServletResponse.SC_UNAUTHORIZED, "Unauthorized"));
     }
 }
+

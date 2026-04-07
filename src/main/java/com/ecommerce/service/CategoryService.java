@@ -1,6 +1,6 @@
 package com.ecommerce.service;
 
-import com.ecommerce.dto.CategoryDTO;
+import com.ecommerce.dto.product.CategoryDTO;
 import java.util.List;
 
 public interface CategoryService {
@@ -15,3 +15,4 @@ public interface CategoryService {
 
     void deleteCategory(Long id);
 }
+

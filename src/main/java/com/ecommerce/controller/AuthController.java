@@ -1,8 +1,8 @@
 package com.ecommerce.controller;
 
-import com.ecommerce.dto.AuthResponse;
-import com.ecommerce.dto.LoginRequest;
-import com.ecommerce.dto.RegisterRequest;
+import com.ecommerce.dto.auth.AuthResponse;
+import com.ecommerce.dto.auth.LoginRequest;
+import com.ecommerce.dto.auth.RegisterRequest;
 import com.ecommerce.exception.ApiResponse;
 import com.ecommerce.service.AuthService;
 import jakarta.validation.Valid;
@@ -29,3 +29,4 @@ public class AuthController {
         return ResponseEntity.ok(ApiResponse.success(response));
     }
 }
+

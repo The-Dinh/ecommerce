@@ -29,3 +29,4 @@ public class RestAccessDeniedHandler implements AccessDeniedHandler {
                 ApiResponse.error(HttpServletResponse.SC_FORBIDDEN, "Access denied"));
     }
 }
+

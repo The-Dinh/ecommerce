@@ -9,3 +9,4 @@ public interface CartItemRepository extends JpaRepository<CartItem, Long> {
     // TODO: Add custom queries (e.g., findByCartId, findByCartIdAndProductId)
     void deleteByCartId(Long cartId);
 }
+

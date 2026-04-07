@@ -12,3 +12,4 @@ public interface CartRepository extends JpaRepository<Cart, Long> {
     // TODO: Add custom queries (e.g., findByUserId)
     Optional<Cart> findByUserId(Long userId);
 }
+

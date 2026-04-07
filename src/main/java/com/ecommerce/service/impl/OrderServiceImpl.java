@@ -1,43 +1,96 @@
 package com.ecommerce.service.impl;
 
-import com.ecommerce.dto.OrderDTO;
-import com.ecommerce.dto.OrderItemDTO;
+import com.ecommerce.dto.order.CheckoutRequest;
+import com.ecommerce.dto.order.OrderDTO;
+import com.ecommerce.dto.order.OrderItemDTO;
+import com.ecommerce.entity.Cart;
+import com.ecommerce.entity.CartItem;
 import com.ecommerce.entity.Order;
 import com.ecommerce.entity.OrderItem;
+import com.ecommerce.entity.Product;
 import com.ecommerce.entity.User;
 import com.ecommerce.enumtype.OrderStatus;
+import com.ecommerce.enumtype.PaymentStatus;
+import com.ecommerce.enumtype.ProductStatus;
 import com.ecommerce.exception.BadRequestException;
 import com.ecommerce.exception.ResourceNotFoundException;
+import com.ecommerce.repository.CartItemRepository;
+import com.ecommerce.repository.CartRepository;
 import com.ecommerce.repository.OrderRepository;
 import com.ecommerce.repository.UserRepository;
 import com.ecommerce.service.OrderService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
+import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 
 @Service
 @RequiredArgsConstructor
 public class OrderServiceImpl implements OrderService {
 
+    private final CartRepository cartRepository;
+    private final CartItemRepository cartItemRepository;
     private final OrderRepository orderRepository;
     private final UserRepository userRepository;
 
     @Override
-    public OrderDTO createMyOrder(String email, OrderDTO orderDTO) {
+    @Transactional
+    public OrderDTO createMyOrder(String email, CheckoutRequest request) {
         User user = getUserByEmail(email);
+        Cart cart = getCartByUserId(user.getId());
+        List<CartItem> cartItems = cart.getCartItems() == null ? List.of() : cart.getCartItems();
+
+        if (cartItems.isEmpty()) {
+            throw new BadRequestException("Cannot checkout because cart is empty");
+        }
+
+        validateStockBeforeCheckout(cartItems);
 
         Order order = Order.builder()
-                .orderDate(orderDTO.getOrderDate())
-                .totalAmount(orderDTO.getTotalAmount())
-                .shippingAddress(orderDTO.getShippingAddress())
-                .paymentMethod(orderDTO.getPaymentMethod())
-                .paymentStatus(orderDTO.getPaymentStatus())
-                .orderStatus(orderDTO.getOrderStatus())
+                .orderDate(LocalDateTime.now())
+                .shippingAddress(request.getShippingAddress())
+                .paymentMethod(request.getPaymentMethod())
+                .paymentStatus(PaymentStatus.PENDING)
+                .orderStatus(OrderStatus.PENDING)
                 .user(user)
                 .build();
 
+        List<OrderItem> orderItems = new ArrayList<>();
+        BigDecimal totalAmount = BigDecimal.ZERO;
+
+        for (CartItem cartItem : cartItems) {
+            Product product = cartItem.getProduct();
+            BigDecimal unitPrice = product.getPrice();
+            BigDecimal subtotal = unitPrice.multiply(BigDecimal.valueOf(cartItem.getQuantity()));
+
+            OrderItem orderItem = OrderItem.builder()
+                    .order(order)
+                    .product(product)
+                    .quantity(cartItem.getQuantity())
+                    .unitPrice(unitPrice)
+                    .subtotal(subtotal)
+                    .build();
+            orderItems.add(orderItem);
+            totalAmount = totalAmount.add(subtotal);
+
+            int remainingStock = product.getStockQuantity() - cartItem.getQuantity();
+            product.setStockQuantity(remainingStock);
+            if (remainingStock == 0) {
+                product.setStatus(ProductStatus.OUT_OF_STOCK);
+            }
+        }
+
+        order.setTotalAmount(totalAmount);
+        order.setOrderItems(orderItems);
         Order savedOrder = orderRepository.save(order);
+
+        cartItemRepository.deleteByCartId(cart.getId());
+        cart.getCartItems().clear();
+
         return mapToDTO(savedOrder);
     }
 
@@ -101,6 +154,24 @@ public class OrderServiceImpl implements OrderService {
                 .orElseThrow(() -> new ResourceNotFoundException("User not found with email: " + email));
     }
 
+    private Cart getCartByUserId(Long userId) {
+        return cartRepository.findByUserId(userId)
+                .orElseThrow(() -> new ResourceNotFoundException("Cart not found for user id: " + userId));
+    }
+
+    // Check product active & đủ stock trước khi checkout
+    private void validateStockBeforeCheckout(List<CartItem> cartItems) {
+        for (CartItem cartItem : cartItems) {
+            Product product = cartItem.getProduct();
+            if (product.getStatus() != ProductStatus.ACTIVE) {
+                throw new BadRequestException("Product is not available: " + product.getName());
+            }
+            if (cartItem.getQuantity() > product.getStockQuantity()) {
+                throw new BadRequestException("Insufficient stock for product: " + product.getName());
+            }
+        }
+    }
+
     private Order getOrderEntityById(Long orderId) {
         return orderRepository.findById(orderId)
                 .orElseThrow(() -> new ResourceNotFoundException("Order not found with id: " + orderId));
@@ -138,3 +209,4 @@ public class OrderServiceImpl implements OrderService {
                 .build();
     }
 }
+

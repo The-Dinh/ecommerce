@@ -1,9 +1,9 @@
 package com.ecommerce.controller;
 
-import com.ecommerce.dto.AdminUpdateUserRequest;
-import com.ecommerce.dto.UpdateProfileRequest;
-import com.ecommerce.dto.UpdateUserRoleRequest;
-import com.ecommerce.dto.UserDTO;
+import com.ecommerce.dto.user.AdminUpdateUserRequest;
+import com.ecommerce.dto.user.UpdateProfileRequest;
+import com.ecommerce.dto.user.UpdateUserRoleRequest;
+import com.ecommerce.dto.user.UserDTO;
 import com.ecommerce.exception.ApiResponse;
 import com.ecommerce.service.UserService;
 import jakarta.validation.Valid;
@@ -69,3 +69,4 @@ public class UserController {
         return ResponseEntity.ok(ApiResponse.success("User deleted successfully", null));
     }
 }
+

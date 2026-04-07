@@ -12,3 +12,4 @@ public interface ProductRepository extends JpaRepository<Product, Long> {
     // TODO: Add custom queries (e.g., findByCategoryId, findByStatus)
     List<Product> findByCategoryId(Long categoryId);
 }
+

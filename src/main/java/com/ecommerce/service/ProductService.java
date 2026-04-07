@@ -1,6 +1,6 @@
 package com.ecommerce.service;
 
-import com.ecommerce.dto.ProductDTO;
+import com.ecommerce.dto.product.ProductDTO;
 import java.util.List;
 
 public interface ProductService {
@@ -17,3 +17,4 @@ public interface ProductService {
 
     void deleteProduct(Long id);
 }
+

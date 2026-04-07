@@ -1,7 +1,7 @@
 package com.ecommerce.service;
 
-import com.ecommerce.dto.CartDTO;
-import com.ecommerce.dto.CartItemDTO;
+import com.ecommerce.dto.cart.CartDTO;
+import com.ecommerce.dto.cart.CartItemDTO;
 
 public interface CartService {
 
@@ -15,3 +15,4 @@ public interface CartService {
 
     void clearMyCart(String email);
 }
+

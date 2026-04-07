@@ -1,6 +1,6 @@
 package com.ecommerce.controller;
 
-import com.ecommerce.dto.ProductDTO;
+import com.ecommerce.dto.product.ProductDTO;
 import com.ecommerce.exception.ApiResponse;
 import com.ecommerce.service.ProductService;
 import lombok.RequiredArgsConstructor;
@@ -54,3 +54,4 @@ public class ProductController {
         return ResponseEntity.ok(ApiResponse.success("Product deleted successfully", null));
     }
 }
+

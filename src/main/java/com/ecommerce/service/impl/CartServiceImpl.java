@@ -1,7 +1,7 @@
 package com.ecommerce.service.impl;
 
-import com.ecommerce.dto.CartDTO;
-import com.ecommerce.dto.CartItemDTO;
+import com.ecommerce.dto.cart.CartDTO;
+import com.ecommerce.dto.cart.CartItemDTO;
 import com.ecommerce.entity.Cart;
 import com.ecommerce.entity.CartItem;
 import com.ecommerce.entity.Product;
@@ -143,3 +143,4 @@ public class CartServiceImpl implements CartService {
                 .build();
     }
 }
+
