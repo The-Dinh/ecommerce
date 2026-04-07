@@ -4,6 +4,7 @@ import com.ecommerce.dto.cart.CartDTO;
 import com.ecommerce.dto.cart.CartItemDTO;
 import com.ecommerce.exception.ApiResponse;
 import com.ecommerce.service.CartService;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
@@ -25,7 +26,7 @@ public class CartController {
     @PostMapping("/me/items")
     public ResponseEntity<ApiResponse<CartDTO>> addItemToMyCart(
             Authentication authentication,
-            @RequestBody CartItemDTO cartItemDTO) {
+            @Valid @RequestBody CartItemDTO cartItemDTO) {
         CartDTO cart = cartService.addItemToMyCart(authentication.getName(), cartItemDTO);
         return ResponseEntity.ok(ApiResponse.success(cart));
     }
@@ -34,7 +35,7 @@ public class CartController {
     public ResponseEntity<ApiResponse<CartDTO>> updateMyCartItem(
             Authentication authentication,
             @PathVariable Long cartItemId,
-            @RequestBody CartItemDTO cartItemDTO) {
+            @Valid @RequestBody CartItemDTO cartItemDTO) {
         CartDTO cart = cartService.updateMyCartItem(authentication.getName(), cartItemId, cartItemDTO);
         return ResponseEntity.ok(ApiResponse.success(cart));
     }

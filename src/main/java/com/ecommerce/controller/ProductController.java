@@ -3,11 +3,11 @@ package com.ecommerce.controller;
 import com.ecommerce.dto.product.ProductDTO;
 import com.ecommerce.exception.ApiResponse;
 import com.ecommerce.service.ProductService;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.Collections;
 import java.util.List;
 
 @RestController
@@ -36,14 +36,14 @@ public class ProductController {
     }
 
     @PostMapping
-    public ResponseEntity<ApiResponse<ProductDTO>> createProduct(@RequestBody ProductDTO productDTO) {
+    public ResponseEntity<ApiResponse<ProductDTO>> createProduct(@Valid @RequestBody ProductDTO productDTO) {
         ProductDTO createdProduct = productService.createProduct(productDTO);
         return ResponseEntity.status(201).body(ApiResponse.created(createdProduct));
     }
 
     @PutMapping("/{id}")
     public ResponseEntity<ApiResponse<ProductDTO>> updateProduct(@PathVariable Long id,
-            @RequestBody ProductDTO productDTO) {
+            @Valid @RequestBody ProductDTO productDTO) {
         ProductDTO updatedProduct = productService.updateProduct(id, productDTO);
         return ResponseEntity.ok(ApiResponse.success(updatedProduct));
     }
