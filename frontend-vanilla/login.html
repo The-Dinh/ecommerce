@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Đăng nhập / Đăng ký - ShopVN</title>
+  <link rel="stylesheet" href="css/style.css">
+  <style>
+    .auth-container {
+      max-width: 400px;
+      margin: 4rem auto;
+      padding: 2.5rem;
+    }
+    .tabs {
+      display: flex;
+      margin-bottom: 2rem;
+      border-bottom: 1px solid var(--color-border);
+    }
+    .tab {
+      flex: 1;
+      text-align: center;
+      padding: 1rem;
+      cursor: pointer;
+      color: var(--color-text-secondary);
+      font-weight: 600;
+      transition: all 0.2s;
+    }
+    .tab.active {
+      color: var(--color-accent-primary);
+      border-bottom: 2px solid var(--color-accent-primary);
+    }
+    .form-panel {
+      display: none;
+    }
+    .form-panel.active {
+      display: block;
+      animation: fadeIn 0.3s ease;
+    }
+  </style>
+</head>
+<body>
+  
+  <nav id="app-navbar" class="navbar"></nav>
+
+  <main class="container">
+    <div class="glass-card auth-container">
+      <div class="tabs">
+        <div class="tab active" id="tab-login" onclick="switchTab('login')">Đăng nhập</div>
+        <div class="tab" id="tab-register" onclick="switchTab('register')">Đăng ký</div>
+      </div>
+
+      <div id="panel-login" class="form-panel active">
+        <form onsubmit="handleLogin(event)">
+          <div class="form-group">
+            <label class="form-label">Email</label>
+            <input type="email" id="login-email" class="form-input" required>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Mật khẩu</label>
+            <input type="password" id="login-password" class="form-input" required>
+          </div>
+          <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 1rem;">Đăng nhập</button>
+        </form>
+      </div>
+
+      <div id="panel-register" class="form-panel">
+        <form onsubmit="handleRegister(event)">
+          <div class="form-group">
+            <label class="form-label">Họ và tên</label>
+            <input type="text" id="reg-name" class="form-input" required>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Email</label>
+            <input type="email" id="reg-email" class="form-input" required>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Số điện thoại</label>
+            <input type="tel" id="reg-phone" class="form-input" required>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Mật khẩu</label>
+            <input type="password" id="reg-password" class="form-input" required minlength="6">
+          </div>
+          <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 1rem;">Đăng ký</button>
+        </form>
+      </div>
+    </div>
+  </main>
+
+  <script src="js/api.js"></script>
+  <script src="js/app.js"></script>
+  <script>
+    // Tab switching support linking directly ?tab=register
+    function switchTab(tab) {
+      document.querySelectorAll('.tab').forEach(el => el.classList.remove('active'));
+      document.querySelectorAll('.form-panel').forEach(el => el.classList.remove('active'));
+      
+      document.getElementById(`tab-${tab}`).classList.add('active');
+      document.getElementById(`panel-${tab}`).classList.add('active');
+    }
+
+    const urlParams = new URLSearchParams(window.location.search);
+    if(urlParams.get('tab') === 'register') {
+      switchTab('register');
+    }
+
+    async function handleLogin(e) {
+      e.preventDefault();
+      const email = document.getElementById('login-email').value;
+      const password = document.getElementById('login-password').value;
+      
+      try {
+        const res = await api.auth.login({ email, password });
+        const authData = res?.data || res;
+        api.setToken(authData.accessToken);
+        
+        // Fetch user profile to get role reliably
+        const meRes = await api.user.getMe();
+        const user = meRes?.data || meRes;
+        
+        localStorage.setItem('user', JSON.stringify({
+          id: user.id, fullName: user.fullName || user.username, email: user.email, role: user.role
+        }));
+        
+        showToast('Đăng nhập thành công!', 'success');
+        setTimeout(() => {
+          if (user.role === 'ADMIN') {
+            window.location.href = 'admin.html';
+          } else {
+            window.location.href = 'index.html';
+          }
+        }, 1000);
+      } catch (err) {
+        showToast(err.message, 'error');
+      }
+    }
+
+    async function handleRegister(e) {
+      e.preventDefault();
+      const payload = {
+        fullName: document.getElementById('reg-name').value,
+        email: document.getElementById('reg-email').value,
+        phone: document.getElementById('reg-phone').value,
+        password: document.getElementById('reg-password').value,
+      };
+
+      try {
+        const res = await api.auth.register(payload);
+        const authData = res?.data || res;
+        api.setToken(authData.accessToken);
+        
+        const meRes = await api.user.getMe();
+        const user = meRes?.data || meRes;
+        localStorage.setItem('user', JSON.stringify({
+          id: user.id, fullName: user.fullName || user.username, email: user.email, role: user.role
+        }));
+        
+        showToast('Đăng ký thành công!', 'success');
+        setTimeout(() => window.location.href = 'index.html', 1000);
+      } catch (err) {
+        showToast(err.message, 'error');
+      }
+    }
+  </script>
+</body>
+</html>

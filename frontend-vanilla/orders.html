@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Đơn hàng của tôi</title>
+  <link rel="stylesheet" href="css/style.css">
+  <style>
+    .order-card {
+      padding: 1.5rem;
+      margin-bottom: 1.5rem;
+    }
+    .order-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 1rem;
+      padding-bottom: 1rem;
+      border-bottom: 1px solid var(--color-border);
+    }
+    .badge {
+      padding: 0.25rem 0.5rem;
+      border-radius: 4px;
+      font-size: 0.75rem;
+      font-weight: bold;
+      color: #fff;
+    }
+    .badge-PENDING { background: var(--color-warning); }
+    .badge-CONFIRMED, .badge-SHIPPING { background: var(--color-info); }
+    .badge-DELIVERED, .badge-PAID { background: var(--color-success); }
+    .badge-CANCELLED, .badge-FAILED { background: var(--color-danger); }
+    
+    .order-item {
+      display: flex;
+      justify-content: space-between;
+      color: var(--color-text-secondary);
+      font-size: 0.875rem;
+      padding: 0.5rem 0;
+    }
+  </style>
+</head>
+<body>
+  
+  <nav id="app-navbar" class="navbar"></nav>
+
+  <main class="container">
+    <h1 class="page-title">Đơn hàng của tôi</h1>
+    
+    <div id="orders-list">
+      <p>Đang tải...</p>
+    </div>
+  </main>
+
+  <script src="js/api.js"></script>
+  <script src="js/app.js"></script>
+  <script>
+    async function loadOrders() {
+      if(!api.getToken()) return window.location.href = 'login.html';
+
+      const list = document.getElementById('orders-list');
+      try {
+        const res = await api.order.getMyOrders();
+        const orders = res.data || [];
+
+        if (orders.length === 0) {
+          list.innerHTML = '<div style="text-align: center; padding: 4rem;"><h3>Bạn chưa có đơn hàng nào</h3></div>';
+          return;
+        }
+
+        list.innerHTML = orders.map(o => `
+          <div class="glass-card order-card">
+            <div class="order-header">
+              <div>
+                <h3 style="margin-bottom: 0.25rem;">Đơn hàng #${o.id}</h3>
+                <p style="font-size: 0.875rem; color: var(--color-text-muted)">
+                  ${new Date(o.orderDate).toLocaleString('vi-VN')}
+                </p>
+              </div>
+              <div style="text-align: right; display:flex; gap: 0.5rem;">
+                <span class="badge badge-${o.orderStatus}">${o.orderStatus}</span>
+                <span class="badge badge-${o.paymentStatus}">${o.paymentStatus}</span>
+              </div>
+            </div>
+            <div style="margin-bottom: 1rem;">
+              ${o.orderItems.map(item => `
+                <div class="order-item">
+                  <span>${item.productName || 'SP'} &times; ${item.quantity}</span>
+                  <span>${formatPrice(item.subtotal)}</span>
+                </div>
+              `).join('')}
+            </div>
+            <div style="display:flex; justify-content: space-between; align-items: center; border-top: 1px dashed var(--color-border); padding-top: 1rem;">
+              <span style="font-weight: bold;">Tổng tiền: <span style="font-size: 1.25rem; color: var(--color-accent-primary)">${formatPrice(o.totalAmount)}</span></span>
+              ${o.orderStatus === 'PENDING' ? `
+                <button class="btn btn-danger btn-sm" onclick="cancelOrder(${o.id})">Hủy đơn</button>
+              ` : ''}
+            </div>
+          </div>
+        `).join('');
+
+      } catch (err) {
+        list.innerHTML = `<p style="color:var(--color-danger)">${err.message}</p>`;
+      }
+    }
+
+    async function cancelOrder(id) {
+      if(!confirm('Bạn chắc chắn muốn hủy đơn hàng này?')) return;
+      try {
+        await api.order.cancelMyOrder(id);
+        showToast('Đã hủy đơn!', 'success');
+        loadOrders();
+      } catch(err) {
+        showToast(err.message, 'error');
+      }
+    }
+
+    document.addEventListener('DOMContentLoaded', loadOrders);
+  </script>
+</body>
+</html>

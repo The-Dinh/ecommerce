@@ -1,0 +1,147 @@
+﻿const BASE_URL = 'http://localhost:8080/api';
+
+const api = {
+  getToken() {
+    return localStorage.getItem('accessToken');
+  },
+
+  setToken(token) {
+    if (token) {
+      localStorage.setItem('accessToken', token);
+    } else {
+      localStorage.removeItem('accessToken');
+      localStorage.removeItem('user');
+    }
+  },
+
+  async parseResponse(response) {
+    const text = await response.text();
+    if (!text) return null;
+    try {
+      return JSON.parse(text);
+    } catch (_) {
+      return { rawText: text };
+    }
+  },
+
+  async request(endpoint, method = 'GET', body = null) {
+    const headers = {
+      'Content-Type': 'application/json',
+    };
+
+    const token = this.getToken();
+    if (token) {
+      headers['Authorization'] = `Bearer ${token}`;
+    }
+
+    const config = {
+      method,
+      headers,
+    };
+
+    if (body) {
+      config.body = JSON.stringify(body);
+    }
+
+    const response = await fetch(`${BASE_URL}${endpoint}`, config);
+    const data = await this.parseResponse(response);
+
+    if (!response.ok) {
+      if (response.status === 401) {
+        this.setToken(null);
+        if (!window.location.pathname.includes('login.html')) {
+          window.location.href = 'login.html';
+        }
+      }
+      throw new Error(data?.message || data?.rawText || `Loi HTTP: ${response.status}`);
+    }
+
+    return data;
+  },
+
+  async requestFormData(endpoint, method = 'POST', formData) {
+    const headers = {};
+    const token = this.getToken();
+    if (token) {
+      headers['Authorization'] = `Bearer ${token}`;
+    }
+
+    const config = {
+      method,
+      headers,
+      body: formData
+    };
+
+    const response = await fetch(`${BASE_URL}${endpoint}`, config);
+    const data = await this.parseResponse(response);
+
+    if (!response.ok) {
+      if (response.status === 401) {
+        this.setToken(null);
+        if (!window.location.pathname.includes('login.html')) {
+          window.location.href = 'login.html';
+        }
+      }
+      throw new Error(data?.message || data?.rawText || `Loi HTTP: ${response.status}`);
+    }
+
+    return data;
+  },
+
+  auth: {
+    login: (credentials) => api.request('/auth/login', 'POST', credentials),
+    register: (data) => api.request('/auth/register', 'POST', data),
+  },
+
+  product: {
+    getAll: () => api.request('/products'),
+    getById: (id) => api.request(`/products/${id}`),
+    getByCategory: (categoryId) => api.request(`/products/category/${categoryId}`),
+    create: (data) => api.request('/products', 'POST', data),
+    update: (id, data) => api.request(`/products/${id}`, 'PUT', data),
+    delete: (id) => api.request(`/products/${id}`, 'DELETE'),
+    uploadImage: (file) => {
+      const formData = new FormData();
+      formData.append('file', file);
+      return api.requestFormData('/products/upload-image', 'POST', formData);
+    },
+  },
+
+  category: {
+    getAll: () => api.request('/categories'),
+    getById: (id) => api.request(`/categories/${id}`),
+    create: (data) => api.request('/categories', 'POST', data),
+    update: (id, data) => api.request(`/categories/${id}`, 'PUT', data),
+    delete: (id) => api.request(`/categories/${id}`, 'DELETE'),
+  },
+
+  user: {
+    getMe: () => api.request('/users/me'),
+    updateMe: (data) => api.request('/users/me', 'PUT', data),
+    getAll: () => api.request('/users'),
+    getById: (id) => api.request(`/users/${id}`),
+    update: (id, data) => api.request(`/users/${id}`, 'PUT', data),
+    changeRole: (id, role) => api.request(`/users/${id}/role`, 'PATCH', { role }),
+    delete: (id) => api.request(`/users/${id}`, 'DELETE'),
+  },
+
+  cart: {
+    getCart: () => api.request('/cart/me'),
+    addItem: (productId, quantity) => api.request('/cart/me/items', 'POST', { productId, quantity }),
+    updateItem: (cartItemId, productId, quantity) => api.request(`/cart/me/items/${cartItemId}`, 'PUT', { productId, quantity }),
+    removeItem: (cartItemId) => api.request(`/cart/me/items/${cartItemId}`, 'DELETE'),
+    clear: () => api.request('/cart/me/clear', 'DELETE'),
+  },
+
+  order: {
+    createOrder: (data) => api.request('/orders/me', 'POST', data),
+    getMyOrders: () => api.request('/orders/me'),
+    getOrderById: (id) => api.request(`/orders/me/${id}`),
+    cancelMyOrder: (id) => api.request(`/orders/me/${id}/cancel`, 'PATCH'),
+    getAll: () => api.request('/orders'),
+    getAdminOrderById: (id) => api.request(`/orders/${id}`),
+    updateStatus: (id, status) => api.request(`/orders/${id}/status?status=${status}`, 'PUT'),
+  }
+};
+
+window.api = api;

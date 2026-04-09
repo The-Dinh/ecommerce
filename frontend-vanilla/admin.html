@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin Dashboard - eCommerce</title>
+  <link rel="stylesheet" href="css/admin-layout.css">
+</head>
+<body>
+
+  <!-- Sidebar -->
+  <aside class="admin-sidebar" id="admin-sidebar-container"></aside>
+
+  <!-- Main Content -->
+  <main class="admin-main">
+    <header class="admin-header">
+      <h1>Tổng quan (Dashboard)</h1>
+      <div class="admin-user-info" id="admin-user-name">Đang tải...</div>
+    </header>
+
+    <div class="admin-stats-container">
+      <div class="admin-stat-card">
+        <h3>Tổng người dùng</h3>
+        <div class="stat-value" id="stat-users">0</div>
+      </div>
+      <div class="admin-stat-card">
+        <h3>Tổng sản phẩm</h3>
+        <div class="stat-value" id="stat-products">0</div>
+      </div>
+      <div class="admin-stat-card">
+        <h3>Tổng đơn hàng</h3>
+        <div class="stat-value" id="stat-orders">0</div>
+      </div>
+      <div class="admin-stat-card">
+        <h3>Doanh thu</h3>
+        <div class="stat-value" id="stat-revenue">0 ₫</div>
+      </div>
+    </div>
+
+    <!-- Recent Orders Table -->
+    <div class="admin-card">
+      <div class="admin-card-header">
+        <h2>Đơn hàng gần đây</h2>
+        <a href="admin-orders.html" class="admin-btn admin-btn-primary" style="text-decoration:none;">Xem tất cả</a>
+      </div>
+      <table class="admin-table">
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>Khách hàng</th>
+            <th>Ngày đặt</th>
+            <th>Tổng tiền</th>
+            <th>Trạng thái</th>
+          </tr>
+        </thead>
+        <tbody id="recent-orders-body">
+          <tr>
+            <td colspan="5" class="text-center">Đang tải dữ liệu...</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+  </main>
+
+  <script src="js/api.js"></script>
+  <script src="js/admin.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', async () => {
+      try {
+        // Load statistics
+        const [users, products, orders] = await Promise.all([
+          api.user.getAll().then(unwrapApiData).catch(() => []),
+          api.product.getAll().then(unwrapApiData).catch(() => []),
+          api.order.getAll().then(unwrapApiData).catch(() => [])
+        ]);
+
+        document.getElementById('stat-users').innerText = users.length;
+        document.getElementById('stat-products').innerText = products.length;
+        document.getElementById('stat-orders').innerText = orders.length;
+
+        // Calculate Revenue
+        const revenue = orders.reduce((sum, order) => {
+          if (order.orderStatus !== 'CANCELLED') {
+            return sum + order.totalAmount;
+          }
+          return sum;
+        }, 0);
+        document.getElementById('stat-revenue').innerText = revenue.toLocaleString() + ' ₫';
+
+        // Render Recent Orders
+        const recentOrdersBody = document.getElementById('recent-orders-body');
+        if (orders.length === 0) {
+          recentOrdersBody.innerHTML = '<tr><td colspan="5" class="text-center">Chưa có đơn hàng nào</td></tr>';
+        } else {
+          // Sort descending by ID or Date and take top 5
+          const sortedOrders = orders.sort((a, b) => b.id - a.id).slice(0, 5);
+          recentOrdersBody.innerHTML = sortedOrders.map(order => {
+             // Map status to badge
+             let badgeClass = 'badge-pending';
+             let statusText = 'Đang chờ duyệt';
+             if (order.orderStatus === 'SHIPPING') { badgeClass = 'badge-shipped'; statusText = 'Đang giao'; }
+             if (order.orderStatus === 'DELIVERED') { badgeClass = 'badge-delivered'; statusText = 'Đã giao'; }
+             if (order.orderStatus === 'CANCELLED') { badgeClass = 'badge-cancelled'; statusText = 'Đã hủy'; }
+
+             return `
+               <tr>
+                 <td>#${order.id}</td>
+                 <td>N/A</td>
+                 <td>${order.orderDate ? new Date(order.orderDate).toLocaleDateString('vi-VN') : 'N/A'}</td>
+                 <td>${order.totalAmount.toLocaleString()} ₫</td>
+                 <td><span class="badge ${badgeClass}">${statusText}</span></td>
+               </tr>
+             `;
+          }).join('');
+        }
+
+      } catch (err) {
+        console.error('Lỗi tải Dashboard:', err);
+      }
+    });
+  </script>
+</body>
+</html>

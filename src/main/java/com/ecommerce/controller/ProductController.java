@@ -5,8 +5,12 @@ import com.ecommerce.exception.ApiResponse;
 import com.ecommerce.service.ProductService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
+import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
 import java.util.List;
 
@@ -52,6 +56,17 @@ public class ProductController {
     public ResponseEntity<ApiResponse<Void>> deleteProduct(@PathVariable Long id) {
         productService.deleteProduct(id);
         return ResponseEntity.ok(ApiResponse.success("Product deleted successfully", null));
+    }
+
+    @PostMapping(value = "/upload-image", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<ApiResponse<String>> uploadProductImage(@RequestParam("file") MultipartFile file) {
+        String relativeImageUrl = productService.uploadProductImage(file);
+        String absoluteImageUrl = ServletUriComponentsBuilder
+                .fromCurrentContextPath()
+                .path(relativeImageUrl)
+                .toUriString();
+
+        return ResponseEntity.ok(ApiResponse.success(absoluteImageUrl));
     }
 }
 

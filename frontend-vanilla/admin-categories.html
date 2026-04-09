@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Quản lý Danh mục - Admin</title>
+  <link rel="stylesheet" href="css/admin-layout.css">
+</head>
+<body>
+
+  <!-- Sidebar -->
+  <aside class="admin-sidebar" id="admin-sidebar-container"></aside>
+
+  <!-- Main Content -->
+  <main class="admin-main">
+    <header class="admin-header">
+      <h1>Quản lý Danh mục</h1>
+      <div class="admin-user-info" id="admin-user-name">Đang tải...</div>
+    </header>
+
+    <div class="admin-card">
+      <div class="admin-card-header">
+        <h2>Danh sách Danh mục</h2>
+        <button class="admin-btn admin-btn-success" onclick="openAddModal()">+ Thêm danh mục</button>
+      </div>
+      <table class="admin-table">
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>Tên danh mục</th>
+            <th>Mô tả</th>
+            <th>Thao tác</th>
+          </tr>
+        </thead>
+        <tbody id="category-table-body">
+          <tr>
+            <td colspan="4" class="text-center">Đang tải dữ liệu...</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </main>
+
+  <!-- Modal Add/Edit -->
+  <div class="admin-modal" id="category-modal">
+    <div class="admin-modal-content">
+      <div class="admin-modal-header">
+        <h2 id="modal-title">Thêm Danh Mục</h2>
+        <button class="admin-modal-close">&times;</button>
+      </div>
+      <form id="category-form">
+        <input type="hidden" id="cat-id">
+        <div class="admin-form-group">
+          <label>Tên danh mục</label>
+          <input type="text" id="cat-name" class="admin-form-control" required>
+        </div>
+        <div class="admin-form-group">
+          <label>Mô tả</label>
+          <textarea id="cat-desc" class="admin-form-control"></textarea>
+        </div>
+        <button type="submit" class="admin-btn admin-btn-primary" style="width: 100%;">Lưu</button>
+      </form>
+    </div>
+  </div>
+
+  <script src="js/api.js"></script>
+  <script src="js/admin.js"></script>
+  <script>
+    let categories = [];
+
+    async function loadCategories() {
+      try {
+        categories = unwrapApiData(await api.category.getAll());
+        renderTable();
+      } catch (error) {
+        console.error(error);
+        alert('Lỗi khi tải danh mục');
+      }
+    }
+
+    function renderTable() {
+      const tbody = document.getElementById('category-table-body');
+      if (categories.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="4" class="text-center">Chưa có danh mục nào</td></tr>';
+        return;
+      }
+
+      tbody.innerHTML = categories.map(cat => `
+        <tr>
+          <td>${cat.id}</td>
+          <td>${cat.name}</td>
+          <td>${cat.description || ''}</td>
+          <td class="action-btns">
+            <button class="admin-btn admin-btn-warning" onclick="openEditModal(${cat.id})">Sửa</button>
+            <button class="admin-btn admin-btn-danger" onclick="deleteCategory(${cat.id})">Xóa</button>
+          </td>
+        </tr>
+      `).join('');
+    }
+
+    function openAddModal() {
+      document.getElementById('modal-title').innerText = 'Thêm Danh Mục';
+      document.getElementById('category-form').reset();
+      document.getElementById('cat-id').value = '';
+      window.showModal('category-modal');
+    }
+
+    function openEditModal(id) {
+      const cat = categories.find(c => c.id === id);
+      if (!cat) return;
+      
+      document.getElementById('modal-title').innerText = 'Sửa Danh Mục';
+      document.getElementById('cat-id').value = cat.id;
+      document.getElementById('cat-name').value = cat.name;
+      document.getElementById('cat-desc').value = cat.description || '';
+      
+      window.showModal('category-modal');
+    }
+
+    document.getElementById('category-form').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const id = document.getElementById('cat-id').value;
+      const data = {
+        name: document.getElementById('cat-name').value,
+        description: document.getElementById('cat-desc').value
+      };
+
+      try {
+        if (id) {
+          // Update
+          await api.category.update(id, data);
+          alert('Cập nhật thành công!');
+        } else {
+          // Create
+          await api.category.create(data);
+          alert('Thêm thành công!');
+        }
+        window.hideModal('category-modal');
+        loadCategories();
+      } catch (error) {
+        console.error(error);
+        alert('Có lỗi xảy ra: ' + error.message);
+      }
+    });
+
+    async function deleteCategory(id) {
+      if (!confirm('Bạn có chắc chắn muốn xóa danh mục này?')) return;
+      try {
+        await api.category.delete(id);
+        alert('Xóa thành công!');
+        loadCategories();
+      } catch (error) {
+        console.error(error);
+        alert('Lỗi: ' + error.message);
+      }
+    }
+
+    // Init
+    document.addEventListener('DOMContentLoaded', loadCategories);
+  </script>
+</body>
+</html>

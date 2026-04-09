@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Chi tiết sản phẩm</title>
+  <link rel="stylesheet" href="css/style.css">
+  <style>
+    .detail-layout {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 3rem;
+    }
+    .detail-img {
+      width: 100%;
+      aspect-ratio: 1;
+      border-radius: var(--radius-2xl);
+      object-fit: cover;
+      background: var(--color-bg-tertiary);
+    }
+    .detail-info {
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+    }
+    .qty-wrap {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      margin: 1.5rem 0;
+    }
+    .qty-btn {
+      width: 40px; height: 40px;
+      border-radius: var(--radius-md);
+      background: var(--color-bg-tertiary);
+      border: 1px solid var(--color-border);
+      color: #fff;
+      font-size: 1.25rem;
+    }
+    .qty-btn:hover { background: var(--color-bg-glass); }
+    .badge {
+      display: inline-block; padding: 0.25rem 0.5rem;
+      background: rgba(124, 58, 237, 0.2);
+      border-radius: var(--radius-sm);
+      font-size: 0.75rem; text-transform: uppercase;
+      color: var(--color-accent-primary);
+    }
+  </style>
+</head>
+<body>
+  
+  <nav id="app-navbar" class="navbar"></nav>
+
+  <main class="container">
+    <div id="content"><p>Đang tải...</p></div>
+  </main>
+
+  <script src="js/api.js"></script>
+  <script src="js/app.js"></script>
+  <script>
+    let currentQty = 1;
+
+    async function loadProduct() {
+      const urlParams = new URLSearchParams(window.location.search);
+      const id = urlParams.get('id');
+      const content = document.getElementById('content');
+
+      if (!id) {
+        content.innerHTML = '<p>Không tìm thấy mã sản phẩm.</p>';
+        return;
+      }
+
+      try {
+        const res = await api.product.getById(id);
+        const p = res.data;
+
+        content.innerHTML = `
+          <a href="javascript:history.back()" style="display:inline-block; margin-bottom: 2rem; color: var(--color-text-secondary)">&larr; Quay lại</a>
+          <div class="detail-layout">
+            <div>
+              ${p.imageUrl ? `<img src="${p.imageUrl}" class="detail-img">` : `<div class="detail-img" style="display:flex;align-items:center;justify-content:center;font-size:5rem;">📦</div>`}
+            </div>
+            <div class="detail-info">
+              ${p.categoryName ? `<span class="badge">${p.categoryName}</span>` : ''}
+              <h1 style="font-size: 2.5rem; line-height: 1.2">${p.name}</h1>
+              ${p.brand ? `<p style="color: var(--color-text-secondary)">Thương hiệu: ${p.brand}</p>` : ''}
+              
+              <h2 style="font-size: 2.5rem; background: var(--color-accent-gradient); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">${formatPrice(p.price)}</h2>
+              
+              <p style="color: var(--color-text-secondary)">Kho: ${p.stockQuantity} sản phẩm (Trạng thái: ${p.status})</p>
+              
+              <p style="line-height: 1.8; margin-top: 1rem; padding-top: 1rem; border-top: 1px solid var(--color-border); white-space: pre-wrap;">${p.description || 'Chưa có mô tả'}</p>
+
+              ${(p.status === 'ACTIVE' && p.stockQuantity > 0) ? `
+                <div class="qty-wrap">
+                  <button class="qty-btn" onclick="changeQty(-1)">-</button>
+                  <span id="qty-display" style="width: 30px; text-align: center; font-weight: bold; font-size: 1.25rem;">1</span>
+                  <button class="qty-btn" onclick="changeQty(1)">+</button>
+                  <button class="btn btn-primary" onclick="addToCart(${p.id})" style="padding: 0.75rem 2rem; flex: 1;">Thêm vào giỏ hàng</button>
+                </div>
+              ` : `
+                <div class="btn btn-secondary" style="margin-top:2rem; text-align:center; opacity:0.5; cursor:not-allowed">Hết hàng</div>
+              `}
+            </div>
+          </div>
+        `;
+      } catch {
+        content.innerHTML = '<p>Không tìm thấy sản phẩm.</p>';
+      }
+    }
+
+    function changeQty(delta) {
+      currentQty = Math.max(1, currentQty + delta);
+      document.getElementById('qty-display').innerText = currentQty;
+    }
+
+    async function addToCart(productId) {
+      if(!api.getToken()) {
+        showToast('Vui lòng đăng nhập để mua hàng.', 'error');
+        return setTimeout(()=> window.location.href="login.html", 1500);
+      }
+      try {
+        await api.cart.addItem(productId, currentQty);
+        showToast(`Đã thêm ${currentQty} sản phẩm vào giỏ!`, 'success');
+        renderNavbar(); // Update count
+      } catch (err) {
+        showToast(err.message, 'error');
+      }
+    }
+
+    document.addEventListener('DOMContentLoaded', loadProduct);
+  </script>
+</body>
+</html>

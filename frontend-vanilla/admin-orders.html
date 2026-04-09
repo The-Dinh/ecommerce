@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Quản lý Đơn hàng - Admin</title>
+  <link rel="stylesheet" href="css/admin-layout.css">
+  <style>
+    .order-details-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 15px;
+    }
+    .order-details-table th, .order-details-table td {
+      border: 1px solid var(--admin-border);
+      padding: 8px;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Sidebar -->
+  <aside class="admin-sidebar" id="admin-sidebar-container"></aside>
+
+  <!-- Main Content -->
+  <main class="admin-main">
+    <header class="admin-header">
+      <h1>Quản lý Đơn hàng</h1>
+      <div class="admin-user-info" id="admin-user-name">Đang tải...</div>
+    </header>
+
+    <div class="admin-card">
+      <div class="admin-card-header">
+        <h2>Danh sách Đơn hàng</h2>
+      </div>
+      <table class="admin-table">
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>Khách hàng</th>
+            <th>Ngày đặt</th>
+            <th>Tổng tiền</th>
+            <th>Trạng thái</th>
+            <th>Thao tác</th>
+          </tr>
+        </thead>
+        <tbody id="order-table-body">
+          <tr>
+            <td colspan="6" class="text-center">Đang tải dữ liệu...</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </main>
+
+  <!-- Modal View/Edit Order -->
+  <div class="admin-modal" id="order-modal">
+    <div class="admin-modal-content" style="max-width: 700px;">
+      <div class="admin-modal-header">
+        <h2>Chi tiết Đơn hàng #<span id="modal-order-id"></span></h2>
+        <button class="admin-modal-close">&times;</button>
+      </div>
+      <div id="order-info" class="mb-3"></div>
+      
+      <div class="admin-form-group">
+        <label>Cập nhật trạng thái</label>
+        <div style="display:flex; gap:10px;">
+          <select id="order-status-select" class="admin-form-control" style="flex:1;">
+            <option value="PENDING">Chờ xử lý (PENDING)</option>
+            <option value="CONFIRMED">Đã xác nhận (CONFIRMED)</option>
+            <option value="SHIPPING">Đang giao (SHIPPING)</option>
+            <option value="DELIVERED">Đã giao (DELIVERED)</option>
+            <option value="CANCELLED">Đã hủy (CANCELLED)</option>
+          </select>
+          <button class="admin-btn admin-btn-primary" onclick="updateOrderStatus()">Lưu Trạng Thái</button>
+        </div>
+      </div>
+
+      <h4>Danh sách sản phẩm</h4>
+      <table class="order-details-table">
+        <thead>
+          <tr>
+            <th>Sản phẩm</th>
+            <th>Đơn giá</th>
+            <th>Số lượng</th>
+            <th>Thành tiền</th>
+          </tr>
+        </thead>
+        <tbody id="order-items-body"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <script src="js/api.js"></script>
+  <script src="js/admin.js"></script>
+  <script>
+    let orders = [];
+    let currentSelectedOrderId = null;
+
+    async function loadOrders() {
+      try {
+        orders = unwrapApiData(await api.order.getAll());
+        // Sort descending by id
+        orders.sort((a, b) => b.id - a.id);
+        renderTable();
+      } catch (error) {
+        console.error(error);
+        alert('Lỗi tải danh sách đơn hàng');
+      }
+    }
+
+    function renderTable() {
+      const tbody = document.getElementById('order-table-body');
+      if (orders.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="6" class="text-center">Chưa có đơn hàng nào</td></tr>';
+        return;
+      }
+
+      tbody.innerHTML = orders.map(order => {
+         let badgeClass = 'badge-pending';
+         let statusText = 'Đang chờ duyệt';
+         if (order.orderStatus === 'CONFIRMED') { badgeClass = 'badge-shipped'; statusText = 'Đã xác nhận'; }
+         if (order.orderStatus === 'SHIPPING') { badgeClass = 'badge-shipped'; statusText = 'Đang giao'; }
+         if (order.orderStatus === 'DELIVERED') { badgeClass = 'badge-delivered'; statusText = 'Đã giao'; }
+         if (order.orderStatus === 'CANCELLED') { badgeClass = 'badge-cancelled'; statusText = 'Đã hủy'; }
+
+         return `
+           <tr>
+             <td>${order.id}</td>
+             <td>N/A</td>
+             <td>${order.orderDate ? new Date(order.orderDate).toLocaleDateString('vi-VN') : 'N/A'}</td>
+             <td>${order.totalAmount.toLocaleString()} ₫</td>
+             <td><span class="badge ${badgeClass}">${statusText}</span></td>
+             <td class="action-btns">
+               <button class="admin-btn admin-btn-warning" onclick="openOrderModal(${order.id})">Chi tiết</button>
+             </td>
+           </tr>
+         `;
+      }).join('');
+    }
+
+    async function openOrderModal(id) {
+      currentSelectedOrderId = id;
+      try {
+        const order = unwrapApiData(await api.order.getAdminOrderById(id));
+        
+        document.getElementById('modal-order-id').innerText = order.id;
+        document.getElementById('order-status-select').value = order.orderStatus;
+
+        const infoHtml = `
+          <p><strong>Khách hàng:</strong> N/A</p>
+          <p><strong>Ngày đặt:</strong> ${order.orderDate ? new Date(order.orderDate).toLocaleString('vi-VN') : 'N/A'}</p>
+          <p><strong>Tổng tiền:</strong> <strong style="color:red; font-size:1.2rem;">${order.totalAmount.toLocaleString()} ₫</strong></p>
+        `;
+        document.getElementById('order-info').innerHTML = infoHtml;
+
+        const itemsBody = document.getElementById('order-items-body');
+        if (order.orderItems && order.orderItems.length > 0) {
+          itemsBody.innerHTML = order.orderItems.map(item => `
+            <tr>
+              <td>${item.productName || 'Sản phẩm #' + item.productId}</td>
+              <td>${item.unitPrice.toLocaleString()} ₫</td>
+              <td>${item.quantity}</td>
+              <td>${item.subtotal.toLocaleString()} ₫</td>
+            </tr>
+          `).join('');
+        } else {
+          itemsBody.innerHTML = '<tr><td colspan="4" class="text-center">Không có sản phẩm</td></tr>';
+        }
+
+        window.showModal('order-modal');
+      } catch (err) {
+        console.error(err);
+        alert('Lỗi tải thông tin chi tiết đơn hàng');
+      }
+    }
+
+    async function updateOrderStatus() {
+      if (!currentSelectedOrderId) return;
+      const status = document.getElementById('order-status-select').value;
+      try {
+        await api.order.updateStatus(currentSelectedOrderId, status);
+        alert('Cập nhật trạng thái thành công!');
+        window.hideModal('order-modal');
+        loadOrders();
+      } catch (err) {
+        console.error(err);
+        alert('Lỗi cập nhật trạng thái');
+      }
+    }
+
+    document.addEventListener('DOMContentLoaded', loadOrders);
+  </script>
+</body>
+</html>

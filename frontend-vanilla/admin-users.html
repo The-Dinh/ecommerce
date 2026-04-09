@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Quản lý Người dùng - Admin</title>
+  <link rel="stylesheet" href="css/admin-layout.css">
+</head>
+<body>
+
+  <!-- Sidebar -->
+  <aside class="admin-sidebar" id="admin-sidebar-container"></aside>
+
+  <!-- Main Content -->
+  <main class="admin-main">
+    <header class="admin-header">
+      <h1>Quản lý Người dùng</h1>
+      <div class="admin-user-info" id="admin-user-name">Đang tải...</div>
+    </header>
+
+    <div class="admin-card">
+      <div class="admin-card-header">
+        <h2>Danh sách Người dùng</h2>
+      </div>
+      <table class="admin-table">
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>Tên đăng nhập</th>
+            <th>Email</th>
+            <th>Họ và tên</th>
+            <th>Vai trò (Role)</th>
+            <th>Ngày tham gia</th>
+            <th>Thao tác</th>
+          </tr>
+        </thead>
+        <tbody id="user-table-body">
+          <tr>
+            <td colspan="7" class="text-center">Đang tải dữ liệu...</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </main>
+
+  <script src="js/api.js"></script>
+  <script src="js/admin.js"></script>
+  <script>
+    let users = [];
+    let currentUser = null;
+
+    async function loadUsers() {
+      try {
+        currentUser = unwrapApiData(await api.user.getMe());
+        users = unwrapApiData(await api.user.getAll());
+        renderTable();
+      } catch (error) {
+        console.error(error);
+        alert('Lỗi tải danh sách người dùng');
+      }
+    }
+
+    function renderTable() {
+      const tbody = document.getElementById('user-table-body');
+      if (users.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="7" class="text-center">Chưa có dữ liệu</td></tr>';
+        return;
+      }
+
+      tbody.innerHTML = users.map(user => {
+         const isSelf = currentUser && currentUser.id === user.id;
+         let roleBadge = user.role === 'ADMIN' ? 'badge-shipped' : 'badge-pending';
+         let roleText = user.role === 'ADMIN' ? 'Admin' : 'Customer';
+
+         return `
+           <tr>
+             <td>${user.id}</td>
+             <td>${user.fullName || 'N/A'} ${isSelf ? '(Bạn)' : ''}</td>
+             <td>${user.email}</td>
+             <td>${user.fullName || 'N/A'}</td>
+             <td><span class="badge ${roleBadge}">${roleText}</span></td>
+             <td>${new Date(user.createdAt).toLocaleDateString('vi-VN')}</td>
+             <td class="action-btns">
+               ${!isSelf ? `
+                 <button class="admin-btn admin-btn-primary" onclick="toggleRole(${user.id}, '${user.role}')">
+                   Đổi Quyền
+                 </button>
+                 <button class="admin-btn admin-btn-danger" onclick="deleteUser(${user.id})">
+                   Xóa
+                 </button>
+               ` : '<span style="color:gray;">Không thể thao tác</span>'}
+             </td>
+           </tr>
+         `;
+      }).join('');
+    }
+
+    async function toggleRole(id, currentRole) {
+      const newRole = currentRole === 'ADMIN' ? 'CUSTOMER' : 'ADMIN';
+      if (!confirm(`Bạn có chắc muốn đổi quyền người dùng này thành ${newRole}?`)) return;
+
+      try {
+        await api.user.changeRole(id, newRole);
+        alert('Đổi quyền thành công!');
+        loadUsers();
+      } catch (err) {
+        console.error(err);
+        alert('Lỗi khi đổi quyền');
+      }
+    }
+
+    async function deleteUser(id) {
+      if (!confirm('Hành động này không thể hoàn tác. Bạn có chắc chắn muốn xóa người dùng này?')) return;
+      try {
+        await api.user.delete(id);
+        alert('Xóa thành công!');
+        loadUsers();
+      } catch (err) {
+        console.error(err);
+        alert('Lỗi khi xóa người dùng: ' + err.message);
+      }
+    }
+
+    document.addEventListener('DOMContentLoaded', loadUsers);
+  </script>
+</body>
+</html>

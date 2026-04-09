@@ -61,6 +61,7 @@ public class CategoryServiceImpl implements CategoryService {
 
     private CategoryDTO mapToDTO(Category category) {
         return CategoryDTO.builder()
+                .id(category.getId())
                 .name(category.getName())
                 .description(category.getDescription())
                 .createdAt(category.getCreatedAt())
