@@ -46,7 +46,7 @@
     <div class="admin-modal-content" style="max-width: 600px;">
       <div class="admin-modal-header">
         <h2 id="modal-title">Thêm Sản phẩm</h2>
-        <button class="admin-modal-close">&times;</button>
+        <button type="button" class="admin-modal-close">&times;</button>
       </div>
       <form id="product-form">
         <input type="hidden" id="prod-id">
@@ -87,13 +87,13 @@
           <textarea id="prod-desc" class="admin-form-control"></textarea>
         </div>
 
-        <button type="submit" class="admin-btn admin-btn-primary" style="width: 100%;">Lưu</button>
+        <button id="prod-save-btn" type="submit" class="admin-btn admin-btn-primary" style="width: 100%;">Lưu</button>
       </form>
     </div>
   </div>
 
-  <script src="js/api.js?v=3"></script>
-  <script src="js/admin.js?v=3"></script>
+  <script src="js/api.js?v=6"></script>
+  <script src="js/admin.js?v=4"></script>
   <script>
     let products = [];
     let categories = [];
@@ -130,7 +130,7 @@
       tbody.innerHTML = products.map(p => `
         <tr>
           <td>${p.id}</td>
-          <td><img src="${p.imageUrl || 'https://via.placeholder.com/50'}" alt="img" style="width:50px; height:50px; object-fit:cover;"></td>
+          <td><img src="${resolveImageUrl(p.imageUrl) || 'https://via.placeholder.com/50'}" alt="img" style="width:50px; height:50px; object-fit:cover;"></td>
           <td>${p.name}</td>
           <td>${Number(p.price).toLocaleString()} ₫</td>
           <td>${p.stockQuantity}</td>
@@ -181,19 +181,32 @@
 
     function updateImagePreview(url) {
       const preview = document.getElementById('prod-img-preview');
+      const resolvedUrl = resolveImageUrl(url);
       if (url) {
-        preview.src = url;
+        preview.src = resolvedUrl;
         preview.style.display = 'block';
       } else {
         preview.style.display = 'none';
       }
     }
 
+    function resolveImageUrl(url) {
+      if (!url) return '';
+      if (url.startsWith('http://') || url.startsWith('https://')) return url;
+      if (url.startsWith('/')) return `${api.getApiOrigin()}${url}`;
+      return `${api.getApiOrigin()}/uploads/products/${url}`;
+    }
+
     document.getElementById('prod-img').addEventListener('input', function () {
       updateImagePreview(this.value);
     });
 
-    document.getElementById('prod-img-file').addEventListener('change', async function () {
+    document.getElementById('prod-img-file').addEventListener('click', function (e) {
+      e.stopPropagation();
+    });
+
+    document.getElementById('prod-img-file').addEventListener('change', function (e) {
+      e.stopPropagation();
       const file = this.files[0];
       const status = document.getElementById('prod-img-upload-status');
 
@@ -202,23 +215,37 @@
         return;
       }
 
-      status.innerText = 'Đang upload ảnh...';
-      try {
-        const res = await api.product.uploadImage(file);
-        const imageUrl = unwrapApiData(res);
-        document.getElementById('prod-img').value = imageUrl;
-        updateImagePreview(imageUrl);
-        status.innerText = 'Upload ảnh thành công';
-      } catch (error) {
-        console.error(error);
-        status.innerText = '';
-        alert('Upload ảnh thất bại: ' + error.message);
-      }
+      // Only preview at selection time. Actual upload happens when user clicks Save.
+      const localPreviewUrl = URL.createObjectURL(file);
+      updateImagePreview(localPreviewUrl);
+      status.innerText = 'Đã chọn ảnh. Ảnh sẽ được upload khi bấm Lưu.';
     });
 
     document.getElementById('product-form').addEventListener('submit', async (e) => {
       e.preventDefault();
+      if (!e.submitter || e.submitter.id !== 'prod-save-btn') {
+        return;
+      }
       const id = document.getElementById('prod-id').value;
+
+      let imageUrl = document.getElementById('prod-img').value;
+      const selectedFile = document.getElementById('prod-img-file').files[0];
+      const uploadStatus = document.getElementById('prod-img-upload-status');
+
+      if (selectedFile) {
+        try {
+          uploadStatus.innerText = 'Đang upload ảnh...';
+          const uploadRes = await api.product.uploadImage(selectedFile);
+          imageUrl = unwrapApiData(uploadRes);
+          document.getElementById('prod-img').value = imageUrl;
+          uploadStatus.innerText = 'Upload ảnh thành công';
+        } catch (error) {
+          console.error(error);
+          uploadStatus.innerText = '';
+          alert('Upload ảnh thất bại: ' + error.message);
+          return;
+        }
+      }
 
       const payload = {
         name: document.getElementById('prod-name').value,
@@ -226,7 +253,7 @@
         price: parseFloat(document.getElementById('prod-price').value),
         stockQuantity: parseInt(document.getElementById('prod-stock').value),
         categoryId: parseInt(document.getElementById('prod-category').value),
-        imageUrl: document.getElementById('prod-img').value,
+        imageUrl,
         status: 'ACTIVE'
       };
 

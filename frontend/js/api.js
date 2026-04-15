@@ -1,4 +1,9 @@
-﻿const BASE_URL = 'http://localhost:8080/api';
+﻿const API_HOST = window.location.hostname
+  ? `${window.location.protocol}//${window.location.hostname}:8080`
+  : 'http://localhost:8080';
+const FALLBACK_API_HOST = 'http://localhost:8080';
+const BASE_URL = `${API_HOST}/api`;
+const FALLBACK_BASE_URL = `${FALLBACK_API_HOST}/api`;
 
 const api = {
   getToken() {
@@ -14,6 +19,10 @@ const api = {
     }
   },
 
+  getApiOrigin() {
+    return API_HOST;
+  },
+
   async parseResponse(response) {
     const text = await response.text();
     if (!text) return null;
@@ -24,7 +33,23 @@ const api = {
     }
   },
 
-  async request(endpoint, method = 'GET', body = null) {
+  async fetchWithFallback(endpoint, config) {
+    try {
+      return await fetch(`${BASE_URL}${endpoint}`, config);
+    } catch (error) {
+      const shouldFallback = API_HOST !== FALLBACK_API_HOST
+        && error instanceof TypeError
+        && String(error.message || '').toLowerCase().includes('fetch');
+
+      if (!shouldFallback) {
+        throw error;
+      }
+      return fetch(`${FALLBACK_BASE_URL}${endpoint}`, config);
+    }
+  },
+
+  async request(endpoint, method = 'GET', body = null, options = {}) {
+    const { redirectOn401 = true } = options;
     const headers = {
       'Content-Type': 'application/json',
     };
@@ -43,11 +68,11 @@ const api = {
       config.body = JSON.stringify(body);
     }
 
-    const response = await fetch(`${BASE_URL}${endpoint}`, config);
+    const response = await this.fetchWithFallback(endpoint, config);
     const data = await this.parseResponse(response);
 
     if (!response.ok) {
-      if (response.status === 401) {
+      if (response.status === 401 && redirectOn401) {
         this.setToken(null);
         if (!window.location.pathname.includes('login.html')) {
           window.location.href = 'login.html';
@@ -59,7 +84,8 @@ const api = {
     return data;
   },
 
-  async requestFormData(endpoint, method = 'POST', formData) {
+  async requestFormData(endpoint, method = 'POST', formData, options = {}) {
+    const { redirectOn401 = true } = options;
     const headers = {};
     const token = this.getToken();
     if (token) {
@@ -69,14 +95,14 @@ const api = {
     const config = {
       method,
       headers,
-      body: formData
+      body: formData,
     };
 
-    const response = await fetch(`${BASE_URL}${endpoint}`, config);
+    const response = await this.fetchWithFallback(endpoint, config);
     const data = await this.parseResponse(response);
 
     if (!response.ok) {
-      if (response.status === 401) {
+      if (response.status === 401 && redirectOn401) {
         this.setToken(null);
         if (!window.location.pathname.includes('login.html')) {
           window.location.href = 'login.html';
@@ -103,7 +129,7 @@ const api = {
     uploadImage: (file) => {
       const formData = new FormData();
       formData.append('file', file);
-      return api.requestFormData('/products/upload-image', 'POST', formData);
+      return api.requestFormData('/products/upload-image', 'POST', formData, { redirectOn401: false });
     },
   },
 
@@ -141,7 +167,7 @@ const api = {
     getAll: () => api.request('/orders'),
     getAdminOrderById: (id) => api.request(`/orders/${id}`),
     updateStatus: (id, status) => api.request(`/orders/${id}/status?status=${status}`, 'PUT'),
-  }
+  },
 };
 
 window.api = api;

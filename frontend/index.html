@@ -60,9 +60,9 @@
             <div>
               <p style="font-size: 0.75rem; color: var(--color-accent-primary)">${p.categoryName || 'Sản phẩm'}</p>
               <h3 class="product-name" title="${p.name}">${p.name}</h3>
-              <div style="display:flex; justify-content:space-between; align-items:flex-end; margin-top: 1rem;">
+              <div class="product-card-actions">
                 <span class="product-price">${formatPrice(p.price)}</span>
-                <a href="product-detail.html?id=${p.id}" class="btn btn-primary btn-sm">Xem chi tiết</a>
+                <a href="product-detail.html?id=${p.id}" class="btn btn-primary btn-sm product-detail-btn">Xem chi tiết</a>
               </div>
             </div>
           </div>

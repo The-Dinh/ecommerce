@@ -44,7 +44,7 @@ public class ProductServiceImpl implements ProductService {
                 .description(productDTO.getDescription())
                 .price(productDTO.getPrice())
                 .stockQuantity(productDTO.getStockQuantity())
-                .imageUrl(productDTO.getImageUrl())
+                .imageUrl(normalizeImageUrl(productDTO.getImageUrl()))
                 .status(productDTO.getStatus())
                 .category(category)
                 .build();
@@ -63,7 +63,7 @@ public class ProductServiceImpl implements ProductService {
         existedProduct.setDescription(productDTO.getDescription());
         existedProduct.setPrice(productDTO.getPrice());
         existedProduct.setStockQuantity(productDTO.getStockQuantity());
-        existedProduct.setImageUrl(productDTO.getImageUrl());
+        existedProduct.setImageUrl(normalizeImageUrl(productDTO.getImageUrl()));
         existedProduct.setStatus(productDTO.getStatus());
         existedProduct.setCategory(category);
         Product updateProduct = productRepository.save(existedProduct);
@@ -146,13 +146,43 @@ public class ProductServiceImpl implements ProductService {
                 .description(product.getDescription())
                 .price(product.getPrice())
                 .stockQuantity(product.getStockQuantity())
-                .imageUrl(product.getImageUrl())
+                .imageUrl(normalizeImageUrl(product.getImageUrl()))
                 .status(product.getStatus())
                 .categoryId(
                         product.getCategory() != null ? product.getCategory().getId() : null)
                 .categoryName(
                         product.getCategory() != null ? product.getCategory().getName() : null)
                 .build();
+    }
+
+    // chuẩn hóa đường dẫn ảnh
+    private String normalizeImageUrl(String imageUrl) {
+        if (imageUrl == null) {
+            return null;
+        }
+
+        String normalized = imageUrl.trim();
+        if (normalized.isEmpty()) {
+            return normalized;
+        }
+
+        if (normalized.startsWith("http://") || normalized.startsWith("https://")) {
+            return normalized;
+        }
+
+        if (normalized.startsWith("/uploads/")) {
+            return normalized;
+        }
+
+        if (normalized.startsWith("uploads/")) {
+            return "/" + normalized;
+        }
+
+        if (normalized.startsWith("/")) {
+            return normalized;
+        }
+
+        return "/uploads/products/" + normalized;
     }
 }
 

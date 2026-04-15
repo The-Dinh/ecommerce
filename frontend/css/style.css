@@ -145,6 +145,22 @@ main {
   font-size: 0.875rem;
 }
 
+.product-detail-btn {
+  padding: 0.35rem 0.7rem;
+  font-size: 0.78rem;
+  line-height: 1.1;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.product-card-actions {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 1rem;
+}
+
 /* Form Styles */
 .form-group {
   margin-bottom: 1rem;
@@ -320,6 +336,7 @@ main {
 .product-price {
   font-weight: 800;
   font-size: 1.25rem;
+  white-space: nowrap;
   background: var(--color-accent-gradient);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
