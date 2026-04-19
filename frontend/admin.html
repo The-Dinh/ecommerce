@@ -76,7 +76,7 @@
         ]);
 
         document.getElementById('stat-users').innerText = users.length;
-        document.getElementById('stat-products').innerText = products.length;
+        document.getElementById('stat-products').innerText = products.totalElements !== undefined ? products.totalElements : products.length;
         document.getElementById('stat-orders').innerText = orders.length;
 
         // Calculate Revenue
@@ -106,7 +106,7 @@
              return `
                <tr>
                  <td>#${order.id}</td>
-                 <td>N/A</td>
+                 <td>${order.userFullName || 'N/A'}</td>
                  <td>${order.orderDate ? new Date(order.orderDate).toLocaleDateString('vi-VN') : 'N/A'}</td>
                  <td>${order.totalAmount.toLocaleString()} ₫</td>
                  <td><span class="badge ${badgeClass}">${statusText}</span></td>

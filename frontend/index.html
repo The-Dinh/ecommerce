@@ -5,15 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>ShopVN - E-commerce</title>
   <link rel="stylesheet" href="css/style.css">
-  <style>
-    .hero {
-      text-align: center;
-      padding: 4rem 1rem;
-      background: radial-gradient(circle at center, var(--color-bg-tertiary), var(--color-bg-primary));
-      border-radius: var(--radius-2xl);
-      margin-bottom: 3rem;
-    }
-  </style>
+  <link rel="stylesheet" href="css/home.css">
 </head>
 <body>
   
@@ -26,10 +18,19 @@
       <a href="products.html" class="btn btn-primary">Khám phá ngay</a>
     </section>
 
-    <h2 style="margin-bottom: 2rem;">Sản phẩm nổi bật</h2>
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;">
+      <h2>Sản phẩm nổi bật</h2>
+      <div style="display: flex; gap: 0.5rem;">
+        <input type="text" id="home-search-input" class="form-input" placeholder="Tìm tên, thương hiệu..." onkeyup="if(event.key === 'Enter') loadFeaturedProducts(0)">
+        <button class="btn btn-primary" onclick="loadFeaturedProducts(0)">Tìm</button>
+      </div>
+    </div>
     <div id="featured-products" class="grid grid-cols-4 gap-6">
       <p>Đang tải...</p>
     </div>
+
+    <!-- Pagination -->
+    <div id="pagination" class="pagination"></div>
   </main>
 
   <footer class="footer">
@@ -41,38 +42,64 @@
   <script src="js/api.js"></script>
   <script src="js/app.js"></script>
   <script>
-    async function loadFeaturedProducts() {
+    async function loadFeaturedProducts(page = 0) {
       const container = document.getElementById('featured-products');
+      const paginationContainer = document.getElementById('pagination');
+      const keyword = document.getElementById('home-search-input') ? document.getElementById('home-search-input').value.trim() : '';
+      container.innerHTML = '<p>Đang tải...</p>';
+      
       try {
-        const res = await api.product.getAll();
-        const products = (res.data || []).slice(0, 8); // Lấy 8 sản phẩm đầu tiên
+        const res = await api.product.getAll(page, 8, keyword); // Lấy 8 sản phẩm mỗi trang cho trang chủ
+        const products = res.data?.content || [];
 
         if (products.length === 0) {
           container.innerHTML = '<p>Không có sản phẩm nào.</p>';
+          paginationContainer.innerHTML = '';
           return;
         }
 
         container.innerHTML = products.map(p => `
-          <div class="glass-card product-card">
+          <a href="product-detail.html?id=${p.id}" class="glass-card product-card">
             <div class="product-img-wrap">
               ${p.imageUrl ? `<img src="${p.imageUrl}" alt="${p.name}">` : `<span style="font-size: 3rem">📦</span>`}
             </div>
             <div>
               <p style="font-size: 0.75rem; color: var(--color-accent-primary)">${p.categoryName || 'Sản phẩm'}</p>
               <h3 class="product-name" title="${p.name}">${p.name}</h3>
+              ${p.brand ? `<p style="font-size: 0.85rem; color: var(--color-text-secondary); margin-bottom: 0.75rem;">${p.brand}</p>` : ''}
               <div class="product-card-actions">
                 <span class="product-price">${formatPrice(p.price)}</span>
-                <a href="product-detail.html?id=${p.id}" class="btn btn-primary btn-sm product-detail-btn">Xem chi tiết</a>
+                <span class="btn btn-primary btn-sm product-detail-btn">Xem chi tiết</span>
               </div>
             </div>
-          </div>
+          </a>
         `).join('');
+
+        renderPagination(res.data?.totalPages || 0, res.data?.number || 0);
       } catch (err) {
         container.innerHTML = '<p style="color:var(--color-danger)">Lỗi tải sản phẩm.</p>';
       }
     }
 
-    document.addEventListener('DOMContentLoaded', loadFeaturedProducts);
+    function renderPagination(totalPages, currentPage) {
+      const container = document.getElementById('pagination');
+      if (totalPages <= 1) {
+        container.innerHTML = '';
+        return;
+      }
+
+      let html = `<button class="page-btn" ${currentPage === 0 ? 'disabled' : ''} onclick="loadFeaturedProducts(${currentPage - 1})">&laquo;</button>`;
+      
+      for (let i = 0; i < totalPages; i++) {
+        html += `<button class="page-btn ${i === currentPage ? 'active' : ''}" onclick="loadFeaturedProducts(${i})">${i + 1}</button>`;
+      }
+
+      html += `<button class="page-btn" ${currentPage === totalPages - 1 ? 'disabled' : ''} onclick="loadFeaturedProducts(${currentPage + 1})">&raquo;</button>`;
+      
+      container.innerHTML = html;
+    }
+
+    document.addEventListener('DOMContentLoaded', () => loadFeaturedProducts(0));
   </script>
 </body>
 </html>

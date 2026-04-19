@@ -206,6 +206,8 @@ public class OrderServiceImpl implements OrderService {
                 .orderItems(order.getOrderItems() == null
                         ? List.of()
                         : order.getOrderItems().stream().map(this::mapToOrderItemDTO).toList())
+                .userFullName(order.getUser() != null ? order.getUser().getFullName() : null)
+                .userEmail(order.getUser() != null ? order.getUser().getEmail() : null)
                 .build();
     }
 }

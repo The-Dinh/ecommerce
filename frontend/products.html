@@ -5,43 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Sản phẩm - ShopVN</title>
   <link rel="stylesheet" href="css/style.css">
-  <style>
-    .layout {
-      display: grid;
-      grid-template-columns: 250px 1fr;
-      gap: 2rem;
-    }
-    .filters {
-      position: sticky;
-      top: calc(var(--navbar-height) + 2rem);
-    }
-    .category-list {
-      display: flex;
-      flex-direction: column;
-      gap: 0.5rem;
-    }
-    .category-item {
-      padding: 0.75rem 1rem;
-      border-radius: var(--radius-md);
-      cursor: pointer;
-      background: var(--color-bg-tertiary);
-      border: 1px solid var(--color-border);
-      transition: all 0.2s;
-    }
-    .category-item:hover {
-      border-color: var(--color-border-hover);
-    }
-    .category-item.active {
-      background: var(--color-accent-gradient);
-      color: #fff;
-      border-color: transparent;
-    }
-    .search-bar {
-      display: flex;
-      gap: 0.5rem;
-      margin-bottom: 2rem;
-    }
-  </style>
+  <link rel="stylesheet" href="css/products.css">
 </head>
 <body>
   
@@ -62,14 +26,12 @@
 
       <!-- Main Content -->
       <div>
-        <div class="search-bar">
-          <input type="text" id="search-input" class="form-input" placeholder="Tìm kiếm sản phẩm..." onkeyup="handleSearch(event)">
-          <button class="btn btn-primary" onclick="loadProducts()">Tìm</button>
-        </div>
-
         <div id="products-grid" class="grid grid-cols-3 gap-6">
           <p>Đang tải...</p>
         </div>
+
+        <!-- Pagination -->
+        <div id="pagination" class="pagination"></div>
       </div>
     </div>
   </main>
@@ -79,10 +41,12 @@
   <script>
     let activeCategoryId = null;
     let allProducts = [];
+    let currentPage = 0;
+    const pageSize = 12;
 
     async function init() {
       await loadCategories();
-      await loadProducts();
+      await loadProducts(0);
     }
 
     async function loadCategories() {
@@ -99,17 +63,21 @@
       }
     }
 
-    async function loadProducts() {
+    async function loadProducts(page = 0) {
+      currentPage = page;
       const grid = document.getElementById('products-grid');
+      const paginationContainer = document.getElementById('pagination');
       grid.innerHTML = '<p>Đang tải...</p>';
+      
       try {
         let res;
         if (activeCategoryId) {
-          res = await api.product.getByCategory(activeCategoryId);
+          res = await api.product.getByCategory(activeCategoryId, page, pageSize);
         } else {
-          res = await api.product.getAll();
+          res = await api.product.getAll(page, pageSize);
         }
-        allProducts = res.data || [];
+        allProducts = res.data?.content || [];
+        renderPagination(res.data?.totalPages || 0, res.data?.number || 0);
         renderProducts();
       } catch {
         grid.innerHTML = '<p style="color:var(--color-danger)">Lỗi tải sản phẩm.</p>';
@@ -118,42 +86,54 @@
 
     function renderProducts() {
       const grid = document.getElementById('products-grid');
-      const keyword = document.getElementById('search-input').value.toLowerCase();
-      
-      const filtered = allProducts.filter(p => !keyword || p.name.toLowerCase().includes(keyword));
 
-      if (filtered.length === 0) {
+      if (allProducts.length === 0) {
         grid.innerHTML = '<p>Không tìm thấy sản phẩm nào.</p>';
         return;
       }
 
-      grid.innerHTML = filtered.map(p => `
-        <div class="glass-card product-card">
+      grid.innerHTML = allProducts.map(p => `
+        <a href="product-detail.html?id=${p.id}" class="glass-card product-card">
           <div class="product-img-wrap">
             ${p.imageUrl ? `<img src="${p.imageUrl}" alt="${p.name}">` : `<span style="font-size: 3rem">📦</span>`}
           </div>
           <div>
             <p style="font-size: 0.75rem; color: var(--color-accent-primary)">${p.categoryName || 'Sản phẩm'}</p>
             <h3 class="product-name" title="${p.name}">${p.name}</h3>
+            ${p.brand ? `<p style="font-size: 0.85rem; color: var(--color-text-secondary); margin-bottom: 0.75rem;">${p.brand}</p>` : ''}
             <div class="product-card-actions">
               <span class="product-price">${formatPrice(p.price)}</span>
-              <a href="product-detail.html?id=${p.id}" class="btn btn-primary btn-sm product-detail-btn">Xem chi tiết</a>
+              <span class="btn btn-primary btn-sm product-detail-btn">Xem chi tiết</span>
             </div>
           </div>
-        </div>
+        </a>
       `).join('');
+    }
+
+    function renderPagination(totalPages, currentPage) {
+      const container = document.getElementById('pagination');
+      if (totalPages <= 1) {
+        container.innerHTML = '';
+        return;
+      }
+
+      let html = `<button class="page-btn" ${currentPage === 0 ? 'disabled' : ''} onclick="loadProducts(${currentPage - 1})">&laquo;</button>`;
+      
+      for (let i = 0; i < totalPages; i++) {
+        html += `<button class="page-btn ${i === currentPage ? 'active' : ''}" onclick="loadProducts(${i})">${i + 1}</button>`;
+      }
+
+      html += `<button class="page-btn" ${currentPage === totalPages - 1 ? 'disabled' : ''} onclick="loadProducts(${currentPage + 1})">&raquo;</button>`;
+      
+      container.innerHTML = html;
     }
 
     function filterByCategory(id) {
       activeCategoryId = id;
       document.querySelectorAll('.category-item').forEach(el => el.classList.remove('active'));
-      document.getElementById(id ? `cat-${id}` : 'cat-all').classList.add('active');
-      loadProducts();
-    }
-
-    function handleSearch(e) {
-      if(e.key === 'Enter') loadProducts();
-      else renderProducts(); // Client side filtering
+      const activeEl = document.getElementById(id ? `cat-${id}` : 'cat-all');
+      if (activeEl) activeEl.classList.add('active');
+      loadProducts(0);
     }
 
     document.addEventListener('DOMContentLoaded', init);

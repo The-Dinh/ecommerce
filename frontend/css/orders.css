@@ -1,0 +1,31 @@
+.order-card {
+  padding: 1.5rem;
+  margin-bottom: 1.5rem;
+}
+.order-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid var(--color-border);
+}
+.badge {
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
+  font-size: 0.75rem;
+  font-weight: bold;
+  color: #fff;
+}
+.badge-PENDING { background: var(--color-warning); }
+.badge-CONFIRMED, .badge-SHIPPING { background: var(--color-info); }
+.badge-DELIVERED, .badge-PAID { background: var(--color-success); }
+.badge-CANCELLED, .badge-FAILED { background: var(--color-danger); }
+
+.order-item {
+  display: flex;
+  justify-content: space-between;
+  color: var(--color-text-secondary);
+  font-size: 0.875rem;
+  padding: 0.5rem 0;
+}

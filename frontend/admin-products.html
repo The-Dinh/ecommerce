@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="vi">
 <head>
   <meta charset="UTF-8">
@@ -19,7 +19,14 @@
     <div class="admin-card">
       <div class="admin-card-header">
         <h2>Danh sách Sản phẩm</h2>
-        <button class="admin-btn admin-btn-success" onclick="openAddModal()">+ Thêm sản phẩm</button>
+        <div style="display:flex; gap:10px;">
+          <select id="admin-category-filter" class="admin-form-control" onchange="clearSearchAndInit()" style="width: 180px;">
+            <option value="">Tất cả danh mục</option>
+          </select>
+          <input type="text" id="admin-search-input" class="admin-form-control" placeholder="Tìm tên, thương hiệu..." onkeyup="if(event.key === 'Enter') clearCategoryAndInit()" style="width: 250px;">
+          <button class="admin-btn admin-btn-primary" onclick="clearCategoryAndInit()">Tìm</button>
+          <button class="admin-btn admin-btn-success" onclick="openAddModal()">+ Thêm sản phẩm</button>
+        </div>
       </div>
       <table class="admin-table">
         <thead>
@@ -39,6 +46,7 @@
           </tr>
         </tbody>
       </table>
+      <div id="admin-pagination" class="admin-pagination" style="display:flex; justify-content:center; gap:10px; margin-top:20px; padding:10px;"></div>
     </div>
   </main>
 
@@ -54,6 +62,11 @@
         <div class="admin-form-group">
           <label>Tên sản phẩm</label>
           <input type="text" id="prod-name" class="admin-form-control" required>
+        </div>
+
+        <div class="admin-form-group">
+          <label>Thương hiệu</label>
+          <input type="text" id="prod-brand" class="admin-form-control" maxlength="100">
         </div>
 
         <div style="display:flex; gap:15px;">
@@ -97,27 +110,69 @@
   <script>
     let products = [];
     let categories = [];
+    let currentPage = 0;
+    let totalPages = 0;
+    const pageSize = 10;
 
-    async function init() {
+    async function init(page = 0) {
+      currentPage = page;
+      const keyword = document.getElementById('admin-search-input') ? document.getElementById('admin-search-input').value.trim() : '';
+      const categoryId = document.getElementById('admin-category-filter') ? document.getElementById('admin-category-filter').value : '';
+      
       try {
-        const [prods, cats] = await Promise.all([
-          api.product.getAll().then(unwrapApiData),
+        let productReq;
+        // Logic tách biệt: Ưu tiên lọc theo danh mục trước (nếu có categoryId thì lờ keyword đi)
+        if (categoryId) {
+          productReq = api.product.getByCategory(categoryId, page, pageSize).then(unwrapApiData);
+        } else {
+          productReq = api.product.getAll(page, pageSize, keyword).then(unwrapApiData);
+        }
+
+        const [resProds, cats] = await Promise.all([
+          productReq,
           api.category.getAll().then(unwrapApiData)
         ]);
-        products = prods;
+        
+        products = resProds.content || [];
+        totalPages = resProds.totalPages || 0;
+        currentPage = resProds.number || 0;
         categories = cats;
+        
+        renderCategoryFilter();
         renderCategorySelect();
         renderTable();
+        renderPagination();
       } catch (error) {
         console.error(error);
         alert('Lỗi khi tải dữ liệu sản phẩm');
       }
     }
 
+    function renderCategoryFilter() {
+      const filter = document.getElementById('admin-category-filter');
+      const currentValue = filter.value;
+      filter.innerHTML = '<option value="">Tất cả danh mục</option>' +
+        categories.map(c => `<option value="${c.id}" ${c.id == currentValue ? 'selected' : ''}>${c.name}</option>`).join('');
+    }
+
     function renderCategorySelect() {
       const select = document.getElementById('prod-category');
       select.innerHTML = '<option value="">Chọn danh mục</option>' +
         categories.map(c => `<option value="${c.id}">${c.name}</option>`).join('');
+    }
+
+    function clearSearchAndInit() {
+      if (document.getElementById('admin-search-input')) {
+        document.getElementById('admin-search-input').value = '';
+      }
+      init(0);
+    }
+
+    function clearCategoryAndInit() {
+      if (document.getElementById('admin-category-filter')) {
+        document.getElementById('admin-category-filter').value = '';
+      }
+      init(0);
     }
 
     function renderTable() {
@@ -131,7 +186,10 @@
         <tr>
           <td>${p.id}</td>
           <td><img src="${resolveImageUrl(p.imageUrl) || 'https://via.placeholder.com/50'}" alt="img" style="width:50px; height:50px; object-fit:cover;"></td>
-          <td>${p.name}</td>
+          <td>
+            <div style="font-weight:600;">${p.name}</div>
+            <div style="font-size:12px; color:#666;">${p.brand || 'Không có thương hiệu'}</div>
+          </td>
           <td>${Number(p.price).toLocaleString()} ₫</td>
           <td>${p.stockQuantity}</td>
           <td>${p.categoryName || 'N/A'}</td>
@@ -141,6 +199,24 @@
           </td>
         </tr>
       `).join('');
+    }
+
+    function renderPagination() {
+      const container = document.getElementById('admin-pagination');
+      if (totalPages <= 1) {
+        container.innerHTML = '';
+        return;
+      }
+
+      let html = `<button class="admin-btn ${currentPage === 0 ? 'disabled' : ''}" ${currentPage === 0 ? 'disabled' : ''} onclick="init(${currentPage - 1})">Trước</button>`;
+      
+      for (let i = 0; i < totalPages; i++) {
+        html += `<button class="admin-btn ${i === currentPage ? 'admin-btn-primary' : ''}" onclick="init(${i})">${i + 1}</button>`;
+      }
+
+      html += `<button class="admin-btn ${currentPage === totalPages - 1 ? 'disabled' : ''}" ${currentPage === totalPages - 1 ? 'disabled' : ''} onclick="init(${currentPage + 1})">Sau</button>`;
+      
+      container.innerHTML = html;
     }
 
     function openAddModal() {
@@ -161,6 +237,7 @@
       document.getElementById('modal-title').innerText = 'Sửa Sản phẩm';
       document.getElementById('prod-id').value = p.id;
       document.getElementById('prod-name').value = p.name;
+      document.getElementById('prod-brand').value = p.brand || '';
       document.getElementById('prod-price').value = p.price;
       document.getElementById('prod-stock').value = p.stockQuantity;
       document.getElementById('prod-desc').value = p.description || '';
@@ -249,6 +326,7 @@
 
       const payload = {
         name: document.getElementById('prod-name').value,
+        brand: document.getElementById('prod-brand').value.trim(),
         description: document.getElementById('prod-desc').value,
         price: parseFloat(document.getElementById('prod-price').value),
         stockQuantity: parseInt(document.getElementById('prod-stock').value),
@@ -285,7 +363,7 @@
       }
     }
 
-    document.addEventListener('DOMContentLoaded', init);
+    document.addEventListener('DOMContentLoaded', () => init(0));
   </script>
 </body>
 </html>

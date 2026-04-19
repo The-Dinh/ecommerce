@@ -5,17 +5,6 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Quản lý Đơn hàng - Admin</title>
   <link rel="stylesheet" href="css/admin-layout.css">
-  <style>
-    .order-details-table {
-      width: 100%;
-      border-collapse: collapse;
-      margin-top: 15px;
-    }
-    .order-details-table th, .order-details-table td {
-      border: 1px solid var(--admin-border);
-      padding: 8px;
-    }
-  </style>
 </head>
 <body>
 
@@ -127,7 +116,7 @@
          return `
            <tr>
              <td>${order.id}</td>
-             <td>N/A</td>
+             <td>${order.userFullName || 'N/A'}</td>
              <td>${order.orderDate ? new Date(order.orderDate).toLocaleDateString('vi-VN') : 'N/A'}</td>
              <td>${order.totalAmount.toLocaleString()} ₫</td>
              <td><span class="badge ${badgeClass}">${statusText}</span></td>
@@ -148,7 +137,7 @@
         document.getElementById('order-status-select').value = order.orderStatus;
 
         const infoHtml = `
-          <p><strong>Khách hàng:</strong> N/A</p>
+          <p><strong>Khách hàng:</strong> ${order.userFullName || 'N/A'} (${order.userEmail || ''})</p>
           <p><strong>Ngày đặt:</strong> ${order.orderDate ? new Date(order.orderDate).toLocaleString('vi-VN') : 'N/A'}</p>
           <p><strong>Tổng tiền:</strong> <strong style="color:red; font-size:1.2rem;">${order.totalAmount.toLocaleString()} ₫</strong></p>
         `;

@@ -1,4 +1,4 @@
-﻿const API_HOST = window.location.hostname
+const API_HOST = window.location.hostname
   ? `${window.location.protocol}//${window.location.hostname}:8080`
   : 'http://localhost:8080';
 const FALLBACK_API_HOST = 'http://localhost:8080';
@@ -84,6 +84,7 @@ const api = {
     return data;
   },
 
+  // tải ảnh lên
   async requestFormData(endpoint, method = 'POST', formData, options = {}) {
     const { redirectOn401 = true } = options;
     const headers = {};
@@ -120,9 +121,14 @@ const api = {
   },
 
   product: {
-    getAll: () => api.request('/products'),
+    getAll: (page = 0, size = 12, keyword = '') => {
+      const qs = keyword ? `&keyword=${encodeURIComponent(keyword)}` : '';
+      return api.request(`/products?page=${page}&size=${size}${qs}`);
+    },
     getById: (id) => api.request(`/products/${id}`),
-    getByCategory: (categoryId) => api.request(`/products/category/${categoryId}`),
+    getByCategory: (categoryId, page = 0, size = 12) => {
+      return api.request(`/products/category/${categoryId}?page=${page}&size=${size}`);
+    },
     create: (data) => api.request('/products', 'POST', data),
     update: (id, data) => api.request(`/products/${id}`, 'PUT', data),
     delete: (id) => api.request(`/products/${id}`, 'DELETE'),

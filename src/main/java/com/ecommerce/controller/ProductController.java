@@ -5,6 +5,9 @@ import com.ecommerce.exception.ApiResponse;
 import com.ecommerce.service.ProductService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -22,8 +25,10 @@ public class ProductController {
     private final ProductService productService;
 
     @GetMapping
-    public ResponseEntity<ApiResponse<List<ProductDTO>>> getAllProducts() {
-        List<ProductDTO> products = productService.getAllProducts();
+    public ResponseEntity<ApiResponse<Page<ProductDTO>>> getAllProducts(
+            @RequestParam(required = false) String keyword,
+            @PageableDefault(page = 0, size = 12) Pageable pageable) {
+        Page<ProductDTO> products = productService.getPaginatedProducts(keyword, pageable);
         return ResponseEntity.ok(ApiResponse.success(products));
     }
 
@@ -34,8 +39,10 @@ public class ProductController {
     }
 
     @GetMapping("/category/{categoryId}")
-    public ResponseEntity<ApiResponse<List<ProductDTO>>> getProductsByCategory(@PathVariable Long categoryId) {
-        List<ProductDTO> products = productService.getProductsByCategory(categoryId);
+    public ResponseEntity<ApiResponse<Page<ProductDTO>>> getProductsByCategory(
+            @PathVariable Long categoryId,
+            @PageableDefault(page = 0, size = 12) Pageable pageable) {
+        Page<ProductDTO> products = productService.getProductsByCategory(categoryId, pageable);
         return ResponseEntity.ok(ApiResponse.success(products));
     }
 

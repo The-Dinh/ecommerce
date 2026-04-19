@@ -51,6 +51,7 @@ body {
   min-height: 100vh;
   display: flex;
   flex-direction: column;
+  padding-top: var(--navbar-height);
 }
 
 a {
@@ -83,7 +84,7 @@ input, select, textarea {
 
 main {
   flex: 1;
-  margin-top: calc(var(--navbar-height) + 2rem);
+  margin-top: 2rem;
   margin-bottom: 4rem;
 }
 
@@ -302,6 +303,13 @@ main {
   overflow: hidden;
   padding: 1rem;
   gap: 1rem;
+  text-decoration: none; /* Đảm bảo không gạch chân */
+  color: inherit; /* Giữ màu chữ chuẩn */
+}
+
+.product-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 10px 25px rgba(0,0,0,0.1);
 }
 
 .product-img-wrap {

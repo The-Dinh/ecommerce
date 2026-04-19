@@ -11,6 +11,8 @@ import com.ecommerce.service.ProductService;
 import lombok.RequiredArgsConstructor;
 
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 import org.springframework.web.multipart.MultipartFile;
@@ -83,6 +85,22 @@ public class ProductServiceImpl implements ProductService {
                 .stream()
                 .map(this::mapToDTO)
                 .toList();
+    }
+
+    @Override
+    public Page<ProductDTO> getPaginatedProducts(String keyword, Pageable pageable) {
+        if (keyword != null && !keyword.trim().isEmpty()) {
+            return productRepository.searchProducts(keyword.trim(), pageable)
+                    .map(this::mapToDTO);
+        }
+        return productRepository.findAll(pageable)
+                .map(this::mapToDTO);
+    }
+
+    @Override
+    public Page<ProductDTO> getProductsByCategory(Long categoryId, Pageable pageable) {
+        return productRepository.findByCategoryId(categoryId, pageable)
+                .map(this::mapToDTO);
     }
 
     @Override

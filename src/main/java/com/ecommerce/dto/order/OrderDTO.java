@@ -48,5 +48,8 @@ public class OrderDTO {
 
     @Valid
     private List<OrderItemDTO> orderItems;
+
+    private String userFullName;
+    private String userEmail;
 }
 
